@@ -30,7 +30,8 @@ typedef struct {
 /* --------------- config dell’ambiente --------- */
 typedef struct {
     char queue_name[64];    /* POSIX queue name */
-    int  max_msg_size;      /* dimensione massima messaggio in byte */
+    int  width;             /* larghezza griglia */
+    int  height;            /* altezza griglia */
 } env_config_t;
 
 /* --------------- formato del messaggio MQ ----- */

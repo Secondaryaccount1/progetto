@@ -4,9 +4,10 @@
 #include "models.h"
 
 /**
- * Legge da ‘path’ il file di configurazione:
- *   queue_name = /nome_coda
- *   max_msg_size = numero
+ * Legge da `path` il file di configurazione nel formato:
+ *   queue=<nome_coda>
+ *   height=<numero>
+ *   width=<numero>
  * Riempie la struct out (ritorna 0 se ok, -1 su errore).
  */
 int parse_env_file(const char *path, env_config_t *out);
