@@ -29,7 +29,8 @@ static void *twin_loop(void *arg)
         int mtime = dt->manage_time;
         int eid = dt->emergency_id;
         dt->status = EN_ROUTE_TO_SCENE;
-        log_event("RESCUER_STATUS id=%d type=%s status=EN_ROUTE_TO_SCENE", dt->id, dt->type->name);
+        log_event(dt->id, RESCUER_STATUS,
+                  "type=%s status=EN_ROUTE_TO_SCENE", dt->type->name);
         pthread_mutex_unlock(&dt->mtx);
 
         double ttrav = travel_time_secs(dt->type, dt->x, dt->y, dx, dy);
@@ -38,14 +39,16 @@ static void *twin_loop(void *arg)
         pthread_mutex_lock(&dt->mtx);
         dt->x = dx; dt->y = dy;
         dt->status = ON_SCENE;
-        log_event("RESCUER_STATUS id=%d type=%s status=ON_SCENE", dt->id, dt->type->name);
+        log_event(dt->id, RESCUER_STATUS,
+                  "type=%s status=ON_SCENE", dt->type->name);
         pthread_mutex_unlock(&dt->mtx);
 
         ts_sleep(mtime);
 
         pthread_mutex_lock(&dt->mtx);
         dt->status = RETURNING_TO_BASE;
-        log_event("RESCUER_STATUS id=%d type=%s status=RETURNING_TO_BASE", dt->id, dt->type->name);
+        log_event(dt->id, RESCUER_STATUS,
+                  "type=%s status=RETURNING_TO_BASE", dt->type->name);
         pthread_mutex_unlock(&dt->mtx);
 
         double tret = travel_time_secs(dt->type, dx, dy, dt->type->x, dt->type->y);
@@ -57,8 +60,10 @@ static void *twin_loop(void *arg)
         dt->status = IDLE;
         dt->assigned = 0;
         dt->type->number++;
-        log_event("RESCUER_STATUS id=%d type=%s status=IDLE", dt->id, dt->type->name);
-        log_event("EMERGENCY_STATUS id=%d status=COMPLETED", eid);
+        log_event(dt->id, RESCUER_STATUS,
+                  "type=%s status=IDLE", dt->type->name);
+        log_event(eid, EMERGENCY_STATUS,
+                  "status=COMPLETED");
         pthread_mutex_unlock(&dt->mtx);
     }
     pthread_mutex_unlock(&dt->mtx);

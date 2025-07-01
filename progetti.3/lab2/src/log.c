@@ -21,20 +21,27 @@ void log_close(void)
     }
 }
 
-void log_event(const char *fmt, ...)
+static const char *evstr[] = {
+    "FILE_PARSING",
+    "MESSAGE_QUEUE",
+    "EMERGENCY_STATUS",
+    "RESCUER_STATUS"
+};
+
+void log_event(long id, event_t ev, const char *fmt, ...)
 {
     if (!fp) return;                      /* logger non inizializzato */
 
-    time_t now = time(NULL);
-    struct tm tm;
-    localtime_r(&now, &tm);
-
-    char ts[24];
-    strftime(ts, sizeof ts, "%Y-%m-%d %H:%M:%S", &tm);
+    long ts = (long)time(NULL);
 
     pthread_mutex_lock(&mtx);
 
-    fprintf(fp, "[%s] ", ts);
+    fprintf(fp, "[%ld] ", ts);
+    if (id >= 0)
+        fprintf(fp, "[%ld] ", id);
+    else
+        fprintf(fp, "[N/A] ");
+    fprintf(fp, "[%s] ", evstr[ev]);
 
     va_list ap;
     va_start(ap, fmt);

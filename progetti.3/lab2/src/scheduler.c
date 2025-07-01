@@ -42,7 +42,8 @@ static void *scheduler_loop(void *arg) {
             }
         }
         if (!et) {
-            log_event("Unknown emergency type '%s'", req.type);
+            log_event(req.id, MESSAGE_QUEUE,
+                      "Unknown emergency type '%s'", req.type);
             continue;
         }
 
@@ -83,17 +84,21 @@ static void *scheduler_loop(void *arg) {
                 rescuer_dt_t *dt = used[j];
                 rescuer_type_t *r = dt->type;
 
-                log_event("ASSIGN emergenza %d → %s#%d", req.id, r->name, dt->id);
-                log_event("EMERGENCY_STATUS id=%d status=ASSIGNED", req.id);
+                log_event(req.id, EMERGENCY_STATUS,
+                          "ASSIGN → %s#%d", r->name, dt->id);
+                log_event(req.id, EMERGENCY_STATUS,
+                          "status=ASSIGNED");
 
                 digital_twin_assign(dt, req.id, req.x, req.y, et->time_to_manage);
             }
 
         } else {
             double needed = max_travel + t_manage;
-            log_event("TIMEOUT emergenza %d (need=%.1f > d=%d)",
-                      req.id, needed, deadline);
-            log_event("EMERGENCY_STATUS id=%d status=TIMEOUT", req.id);
+            log_event(req.id, EMERGENCY_STATUS,
+                      "TIMEOUT (need=%.1f > d=%d)",
+                      needed, deadline);
+            log_event(req.id, EMERGENCY_STATUS,
+                      "status=TIMEOUT");
         }
     }
     return NULL;

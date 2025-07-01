@@ -42,5 +42,13 @@ typedef struct {
     int  priority;
 } emergency_request_t;
 
+/* categorie di evento per il logging */
+typedef enum {
+    FILE_PARSING,
+    MESSAGE_QUEUE,
+    EMERGENCY_STATUS,
+    RESCUER_STATUS
+} event_t;
+
 #endif /* MODELS_H */
 
