@@ -1,0 +1,4 @@
+build/
+bin/
+*.o
+progetti.3/lab2/test_*
