@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 #include "scheduler.h"
 #include "queue.h"
@@ -72,6 +74,10 @@ static void *scheduler_loop(void *arg) {
         }
 
         // 3) Assign or timeout
+        if (mkdir("logs", 0755) == -1 && errno != EEXIST) {
+            perror("mkdir logs");
+            return 1;
+        }
         if (can_assign) {
             for (int j = 0; j < et->n_required; j++) {
                 rescuer_dt_t *dt = used[j];
