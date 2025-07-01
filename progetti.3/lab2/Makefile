@@ -53,18 +53,20 @@ $(BIN_SERVER): \
 	src/mq_manager.c \
 	src/parse_env.c \
 	src/log.c \
-	src/parse_rescuers.c \
-	src/parse_emergency_types.c \
-	src/queue.c \
-	src/scheduler.c \
+       src/parse_rescuers.c \
+       src/parse_emergency_types.c \
+        src/digital_twin.c \
+        src/queue.c \
+        src/scheduler.c \
 	include/models.h \
 	include/mq_manager.h \
 	include/parse_env.h \
 	include/log.h \
-	include/parse_rescuers.h \
-	include/parse_emergency_types.h \
-	include/queue.h \
-	include/scheduler.h
+        include/parse_rescuers.h \
+        include/parse_emergency_types.h \
+        include/digital_twin.h \
+        include/queue.h \
+        include/scheduler.h
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -Iinclude $(filter %.c,$^) -o $@
 
@@ -92,7 +94,8 @@ $(BIN_TEST_PARSERS): tests/test_parsers.c \
 	src/parse_rescuers.c include/parse_rescuers.h \
 	src/parse_emergency_types.c include/parse_emergency_types.h
 	@mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) -Iinclude $^ -o $@
+		$(CC) $(CFLAGS) -Iinclude $^ -o $@
+		chmod +x $@
 
 .PHONY: test-parsers
 test-parsers: $(BIN_TEST_PARSERS)

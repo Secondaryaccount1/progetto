@@ -13,12 +13,15 @@
 #include "log.h"
 #include "queue.h"
 #include "scheduler.h"
+#include "digital_twin.h"
 
 /* Rendiamo rescuer_list e etype_list globali, visibili allo scheduler */
 rescuer_type_t   *rescuer_list = NULL;
 int               n_rescuers   = 0;
 emergency_type_t *etype_list   = NULL;
 int               n_etypes     = 0;
+rescuer_dt_t     *dt_list      = NULL;
+int               dt_count     = 0;
 
 extern void sigint_handler(int);
 
@@ -54,6 +57,11 @@ int main(void) {
     log_event("Loaded %d rescuers, %d emergency types",
               n_rescuers, n_etypes);
 
+    if (digital_twin_factory(rescuer_list, n_rescuers, &dt_list, &dt_count) != 0) {
+        log_event("Errore creazione digital twins");
+        return 1;
+    }
+
     /* 4) Queue interna + scheduler */
     bqueue_t queue;
     if (bqueue_init(&queue, 100) != 0) {
@@ -85,6 +93,7 @@ int main(void) {
     /* 6) Attende CTRL-C */
     pthread_join(listener_thread, NULL);
     scheduler_stop();
+    digital_twin_shutdown(dt_list, dt_count);
     bqueue_destroy(&queue);
     log_close();
 
