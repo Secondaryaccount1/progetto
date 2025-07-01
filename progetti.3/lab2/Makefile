@@ -91,8 +91,9 @@ test-utils: $(BIN_TEST_UTILS)
 # Test parsers modules
 BIN_TEST_PARSERS := $(BIN_DIR)/test_parsers
 $(BIN_TEST_PARSERS): tests/test_parsers.c \
-	src/parse_rescuers.c include/parse_rescuers.h \
-	src/parse_emergency_types.c include/parse_emergency_types.h
+        src/parse_rescuers.c include/parse_rescuers.h \
+        src/parse_emergency_types.c include/parse_emergency_types.h \
+        src/log.c include/log.h
 	@mkdir -p $(BIN_DIR)
 		$(CC) $(CFLAGS) -Iinclude $^ -o $@
 		chmod +x $@
