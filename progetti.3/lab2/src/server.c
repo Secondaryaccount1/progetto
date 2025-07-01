@@ -4,6 +4,8 @@
 #include <string.h>
 #include <signal.h>
 #include <pthread.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 #include "models.h"
 #include "parse_env.h"
@@ -47,6 +49,10 @@ int main(void) {
     }
 
     /* 3) Logger */
+    if (mkdir("logs", 0755) == -1 && errno != EEXIST) {
+        perror("mkdir logs");
+        return 1;
+    }
     if (log_init("logs/server.log") != 0) {
         perror("log_init");
         return 1;
