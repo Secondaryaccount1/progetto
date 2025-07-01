@@ -34,10 +34,11 @@ int main(void) {
         fprintf(stderr,
                 "Warning: conf/env.conf non trovato, uso valori di default\n");
         strcpy(cfg.queue_name, "/emergenze123");
-        cfg.max_msg_size = sizeof(emergency_request_t);
+        cfg.width = 0;
+        cfg.height = 0;
     }
-    printf("[SERVER] Queue: %s  (max %d B)\n",
-           cfg.queue_name, cfg.max_msg_size);
+    printf("[SERVER] Queue: %s  (grid %dx%d)\n",
+           cfg.queue_name, cfg.width, cfg.height);
 
     /* 2) Parser rescuers & emergency types */
     if (parse_rescuers_file("conf/rescuers.conf",
@@ -46,6 +47,7 @@ int main(void) {
         return 1;
     }
     if (parse_emergency_types_file("conf/emergency_types.conf",
+                                   rescuer_list, n_rescuers,
                                    &etype_list, &n_etypes) != 0) {
         fprintf(stderr, "Errore parsing conf/emergency_types.conf\n");
         return 1;
@@ -85,7 +87,7 @@ int main(void) {
     mq_args_t args = {
         .qname    = cfg.queue_name,
         .queue    = &queue,
-        .msg_size = cfg.max_msg_size
+        .msg_size = sizeof(emergency_request_t)
     };
     if (pthread_create(&listener_thread, NULL,
                        mq_listener, &args) != 0) {

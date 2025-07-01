@@ -3,7 +3,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int rescuer_index_by_name(const char *name,
+                                 rescuer_type_t *list, int n)
+{
+    for (int i=0;i<n;i++)
+        if (strcmp(list[i].name, name)==0)
+            return i;
+    return -1;
+}
+
 int parse_emergency_types_file(const char *path,
+                               rescuer_type_t *rlist, int n_rlist,
                                emergency_type_t **out, int *n_out)
 {
     FILE *fp = fopen(path, "r");
@@ -14,12 +24,14 @@ int parse_emergency_types_file(const char *path,
     emergency_type_t *arr = malloc(sizeof *arr * cap);
     if (!arr) { fclose(fp); return -1; }
 
+    char line[256];
     char name[32];
-    int priority, time_to_manage, n_required;
-    while (fscanf(fp, "%31s %d %d %d",
-                  name, &priority, &time_to_manage,
-                  &n_required) == 4)
-    {
+    int priority;
+    while (fgets(line, sizeof line, fp)) {
+        char rest[200];
+        if (sscanf(line, "[%31[^]]] [%d] %199[^\n]", name, &priority, rest) != 3)
+            continue;
+
         if (cnt == cap) {
             cap *= 2;
             emergency_type_t *tmp =
@@ -27,21 +39,29 @@ int parse_emergency_types_file(const char *path,
             if (!tmp) { free(arr); fclose(fp); return -1; }
             arr = tmp;
         }
-        /* copia base */
-        strncpy(arr[cnt].name, name, sizeof arr[cnt].name);
-        arr[cnt].priority        = priority;
-        arr[cnt].time_to_manage  = time_to_manage;
-        arr[cnt].n_required      = n_required;
 
-        /* leggi i required_units */
-        for (int i = 0; i < n_required; i++) {
-            if (fscanf(fp, "%d", &arr[cnt].required_units[i]) != 1) {
-                arr[cnt].required_units[i] = -1;
-            }
+        strncpy(arr[cnt].name, name, sizeof arr[cnt].name);
+        arr[cnt].priority = priority;
+        arr[cnt].n_required = 0;
+        arr[cnt].time_to_manage = 0;
+
+        char *p = rest;
+        while (*p) {
+            char rname[32];
+            int count, tman;
+            if (sscanf(p, "%31[^:]:%d,%d;", rname, &count, &tman) != 3)
+                break;
+            int ridx = rescuer_index_by_name(rname, rlist, n_rlist);
+            for (int i=0;i<count && arr[cnt].n_required<10;i++)
+                arr[cnt].required_units[arr[cnt].n_required++] = ridx;
+            if (tman > arr[cnt].time_to_manage)
+                arr[cnt].time_to_manage = tman;
+            char *semi = strchr(p, ';');
+            if (!semi) break;
+            p = semi + 1;
         }
+
         cnt++;
-        /* consuma eventuali newline/spazi */
-        int c; while ((c = fgetc(fp)) != EOF && c!='\n');
     }
 
     fclose(fp);

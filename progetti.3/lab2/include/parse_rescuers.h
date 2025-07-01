@@ -4,15 +4,11 @@
 #include "models.h"
 
 /**
- * Legge il file `path`, riga per riga, formati del tipo:
- *   nome speed number x y
- * dove:
- *   nome   → stringa (es. "Vigili"), 
- *   speed  → intero,
- *   number → intero (# unità),
- *   x,y    → coordinate iniziali.
- * Restituisce un array allocato con malloc() in *out, e ne
- * mette la dimensione in *n_out. Ritorna 0 su sucesso, -1 su errore.
+ * Legge il file `path` nel formato:
+ *   [nome][numero][speed][x;y]
+ * Restituisce un array allocato con `malloc()` in `*out` e
+ * scrive la lunghezza in `*n_out`. Ritorna 0 su successo,
+ * -1 in caso di errore.
  */
 int parse_rescuers_file(const char *path,
                         rescuer_type_t **out, int *n_out);

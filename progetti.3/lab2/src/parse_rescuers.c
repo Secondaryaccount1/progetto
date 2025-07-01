@@ -14,11 +14,13 @@ int parse_rescuers_file(const char *path,
     rescuer_type_t *arr = malloc(sizeof *arr * cap);
     if (!arr) { fclose(fp); return -1; }
 
+    char line[128];
     char name[32];
-    int speed, number, x, y;
-    while (fscanf(fp, "%31s %d %d %d %d\n",
-                  name, &speed, &number, &x, &y) == 5)
-    {
+    int number, speed, x, y;
+    while (fgets(line, sizeof line, fp)) {
+        if (sscanf(line, "[%31[^]]][%d][%d][%d;%d]",
+                   name, &number, &speed, &x, &y) != 5)
+            continue;
         if (cnt == cap) {
             cap *= 2;
             rescuer_type_t *tmp =

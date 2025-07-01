@@ -19,7 +19,8 @@ int parse_env_file(const char *path, env_config_t *cfg) {
 
     /* valori di default */
     strncpy(cfg->queue_name, "/emergenze123", sizeof cfg->queue_name);
-    cfg->max_msg_size = 256;
+    cfg->width = 0;
+    cfg->height = 0;
 
     char line[128];
     while (fgets(line, sizeof line, fp)) {
@@ -28,10 +29,12 @@ int parse_env_file(const char *path, env_config_t *cfg) {
         char key[64], val[64];
         if (sscanf(line, "%63[^=]=%63s", key, val) == 2) {
             trim(key); trim(val);
-            if (strcmp(key, "queue_name")==0) {
+            if (strcmp(key, "queue")==0) {
                 strncpy(cfg->queue_name, val, sizeof cfg->queue_name);
-            } else if (strcmp(key, "max_msg_size")==0) {
-                cfg->max_msg_size = atoi(val);
+            } else if (strcmp(key, "height")==0) {
+                cfg->height = atoi(val);
+            } else if (strcmp(key, "width")==0) {
+                cfg->width = atoi(val);
             }
         }
     }
