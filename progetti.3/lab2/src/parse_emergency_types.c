@@ -1,4 +1,5 @@
 #include "parse_emergency_types.h"
+#include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,12 +47,20 @@ int parse_emergency_types_file(const char *path,
         arr[cnt].time_to_manage = 0;
 
         char *p = rest;
+        int valid_line = 1;
         while (*p) {
             char rname[32];
             int count, tman;
-            if (sscanf(p, "%31[^:]:%d,%d;", rname, &count, &tman) != 3)
+            if (sscanf(p, "%31[^:]:%d,%d;", rname, &count, &tman) != 3) {
+                valid_line = 0;
                 break;
+            }
             int ridx = rescuer_index_by_name(rname, rlist, n_rlist);
+            if (ridx == -1) {
+                log_event("Unknown rescuer type '%s'", rname);
+                valid_line = 0;
+                break;
+            }
             for (int i=0;i<count && arr[cnt].n_required<10;i++)
                 arr[cnt].required_units[arr[cnt].n_required++] = ridx;
             if (tman > arr[cnt].time_to_manage)
@@ -61,7 +70,8 @@ int parse_emergency_types_file(const char *path,
             p = semi + 1;
         }
 
-        cnt++;
+        if (valid_line)
+            cnt++;
     }
 
     fclose(fp);

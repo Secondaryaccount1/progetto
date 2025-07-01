@@ -28,6 +28,17 @@ int main(void) {
     assert(nel == 1);
     assert(strcmp(el[0].name,"Fire")==0 && el[0].priority==2 && el[0].n_required==1);
     free(el);
+
+    // Unknown rescuer type should be logged and the line skipped
+    f = fopen("tests/_et.txt","w");
+    fprintf(f,"[Crash] [1] Foo:1,3;\n");
+    fclose(f);
+
+    el = NULL;
+    nel = 0;
+    assert(parse_emergency_types_file("tests/_et.txt", rl, nrl, &el, &nel) == 0);
+    assert(nel == 0);
+    free(el);
     free(rl);
 
     printf("[test_parsers] all tests passed\n");
