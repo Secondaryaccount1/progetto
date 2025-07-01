@@ -102,3 +102,13 @@ $(BIN_TEST_PARSERS): tests/test_parsers.c \
 test-parsers: $(BIN_TEST_PARSERS)
 	./$(BIN_TEST_PARSERS)
 
+# Test parse_env module
+BIN_TEST_PARSE_ENV := $(BIN_DIR)/test_parse_env
+$(BIN_TEST_PARSE_ENV): tests/test_parse_env.c src/parse_env.c include/parse_env.h
+	@mkdir -p $(BIN_DIR)
+	$(CC) $(CFLAGS) -Iinclude $^ -o $@
+
+.PHONY: test-parse-env
+test-parse-env: $(BIN_TEST_PARSE_ENV)
+	./$(BIN_TEST_PARSE_ENV)
+

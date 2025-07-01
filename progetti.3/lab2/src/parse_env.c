@@ -9,7 +9,9 @@ static void trim(char *s) {
     char *p = s;
     while (isspace((unsigned char)*p)) p++;
     memmove(s, p, strlen(p)+1);
-    for (char *e = s + strlen(s) - 1; e >= s && isspace((unsigned char)*e); --e)
+    size_t len = strlen(s);
+    if (len == 0) return;
+    for (char *e = s + len - 1; e >= s && isspace((unsigned char)*e); --e)
         *e = '\0';
 }
 
