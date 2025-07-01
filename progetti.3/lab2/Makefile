@@ -68,7 +68,7 @@ $(BIN_SERVER): \
         include/queue.h \
         include/scheduler.h
 	@mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) -Iinclude $(filter %.c,$^) -o $@
+	$(CC) $(CFLAGS) -Iinclude $(filter %.c,$^) -o $@ -lrt
 
 .PHONY: client server
 client: $(BIN_CLIENT)
