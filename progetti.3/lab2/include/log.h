@@ -2,7 +2,9 @@
 #define LOG_H
 
 /*  log_init() va chiamata una sola volta all’avvio del server.
- *  Ritorna 0 se il file è stato aperto, −1 su errore.           */
+ *  Il percorso fornito deve avere già la directory di destinazione
+ *  già esistente (la funzione non la crea). Ritorna 0 se il file è
+ *  stato aperto, −1 su errore.                                     */
 int  log_init(const char *filepath);
 
 /*  log_event() funziona come printf(): accetta una stringa di
