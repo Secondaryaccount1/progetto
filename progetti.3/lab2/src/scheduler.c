@@ -115,7 +115,7 @@ void scheduler_add_emergency(const emergency_request_t *req)
     if (!e && emergency_count < MAX_EMERGENCIES) {
         e = &emergency_table[emergency_count++];
         e->id = req->id;
-        strncpy(e->type, req->type, sizeof(e->type) - 1);
+        snprintf(e->type, sizeof(e->type), "%s", req->type);
         e->type[sizeof(e->type) - 1] = '\0';
         e->creation_time = req->timestamp;
     }
