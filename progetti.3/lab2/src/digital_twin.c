@@ -108,15 +108,18 @@ static void *twin_loop(void *arg)
 int digital_twin_factory(rescuer_type_t *types, int n_types,
                          rescuer_dt_t **out_list, int *out_n)
 {
+    stop_twins = 0;
     int total = 0;
-    for (int i=0;i<n_types;i++) total += types[i].number;
+    for (int i = 0; i < n_types; i++)
+        total += types[i].number;
 
     rescuer_dt_t *arr = calloc(total, sizeof(rescuer_dt_t));
-    if (!arr) return -1;
+    if (!arr)
+        return -1;
 
-    int id=0;
-    for (int i=0;i<n_types;i++) {
-        for (int j=0;j<types[i].number;j++) {
+    int id = 0;
+    for (int i = 0; i < n_types; i++) {
+        for (int j = 0; j < types[i].number; j++) {
             rescuer_dt_t *dt = &arr[id];
             dt->id = id;
             dt->x = types[i].x;
@@ -127,7 +130,20 @@ int digital_twin_factory(rescuer_type_t *types, int n_types,
             pthread_cond_init(&dt->cond, NULL);
             if (pthread_create(&dt->thread, NULL, twin_loop, dt) != 0) {
                 log_event_ex("DT", "THREAD", "failed to start twin %d", id);
+                /* cleanup previously created twins */
+                stop_twins = 1;
+                for (int k = 0; k < id; k++) {
+                    pthread_mutex_lock(&arr[k].mtx);
+                    pthread_cond_signal(&arr[k].cond);
+                    pthread_mutex_unlock(&arr[k].mtx);
+                }
+                for (int k = 0; k < id; k++) {
+                    pthread_join(arr[k].thread, NULL);
+                    pthread_mutex_destroy(&arr[k].mtx);
+                    pthread_cond_destroy(&arr[k].cond);
+                }
                 free(arr);
+                stop_twins = 0;
                 return -1;
             }
             id++;
