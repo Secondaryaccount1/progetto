@@ -112,3 +112,13 @@ $(BIN_TEST_PARSE_ENV): tests/test_parse_env.c src/parse_env.c include/parse_env.
 test-parse-env: $(BIN_TEST_PARSE_ENV)
 	./$(BIN_TEST_PARSE_ENV)
 
+# Deadlock monitor test
+BIN_TEST_DEADLOCK := $(BIN_DIR)/test_deadlock
+$(BIN_TEST_DEADLOCK): tests/test_deadlock.c src/scheduler.c src/log.c include/scheduler.h include/log.h include/models.h
+	@mkdir -p $(BIN_DIR)
+	$(CC) $(CFLAGS) -Iinclude $^ -o $@
+
+.PHONY: test-deadlock
+test-deadlock: $(BIN_TEST_DEADLOCK)
+	./$(BIN_TEST_DEADLOCK)
+
