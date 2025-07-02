@@ -20,6 +20,15 @@ typedef struct {
     int  time_to_manage;
 } emergency_type_t;
 
+typedef enum {
+    EM_STATUS_WAITING,
+    EM_STATUS_ASSIGNED,
+    EM_STATUS_IN_PROGRESS,
+    EM_STATUS_COMPLETED,
+    EM_STATUS_TIMEOUT,
+    EM_STATUS_CANCELED
+} emergency_status_t;
+
 /* --------------- emergenza attiva ------------- */
 typedef struct {
     int  id;
@@ -27,6 +36,7 @@ typedef struct {
     int  x, y;
     int  priority;
     long creation_time;
+    emergency_status_t status;
 } emergency_t;
 
 /* --------------- config dell’ambiente --------- */
