@@ -17,7 +17,8 @@
 /* After this many seconds a priority 0 emergency becomes priority 1 */
 #define AGING_THRESHOLD 60
 
-// Globals defined in server.c
+// Globals defined in server.c. The scheduler assumes the logs directory
+// already exists and is created by the server before threads start.
 extern rescuer_type_t   *rescuer_list;
 extern int               n_rescuers;
 extern emergency_type_t *etype_list;
@@ -85,10 +86,6 @@ static void *scheduler_loop(void *arg) {
         }
 
         // 3) Assign or timeout
-        if (mkdir("logs", 0755) == -1 && errno != EEXIST) {
-            perror("mkdir logs");
-            return 1;
-        }
         if (can_assign) {
             for (int j = 0; j < et->n_required; j++) {
                 rescuer_dt_t *dt = used[j];
