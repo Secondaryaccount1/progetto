@@ -3,6 +3,7 @@
 #include <string.h>
 #include <mqueue.h>
 #include <time.h>
+#include <unistd.h>
 #include "models.h"
 
 #define CHECK(x)  do { if ((x) == -1) { perror(#x); exit(1);} } while (0)
