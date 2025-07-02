@@ -13,7 +13,7 @@ static int send_request(mqd_t mq, emergency_request_t *req)
 }
 
 int main(int argc, char *argv[]) {
-    if (argc == 7) {
+    if (argc == 8) {
         /* invio di una singola emergenza */
         const char *qname = argv[1];
         emergency_request_t req = {
@@ -25,6 +25,10 @@ int main(int argc, char *argv[]) {
         };
         strncpy(req.type, argv[3], sizeof(req.type)-1);
         req.type[sizeof(req.type)-1] = '\0';
+
+        int delay = atoi(argv[7]);
+        if (delay > 0)
+            sleep(delay);
 
         mqd_t mq = mq_open(qname, O_WRONLY | O_CREAT, 0660, NULL);
         CHECK(mq);
@@ -54,12 +58,15 @@ int main(int argc, char *argv[]) {
         while (fgets(line, sizeof line, fp)) {
             emergency_request_t req;
             char type[32];
-            if (sscanf(line, "%d %31s %d %d %d",
+            int delay;
+            if (sscanf(line, "%d %31s %d %d %d %d",
                        &req.id, type, &req.priority,
-                       &req.x, &req.y) == 5) {
+                       &req.x, &req.y, &delay) == 6) {
                 strncpy(req.type, type, sizeof req.type - 1);
                 req.type[sizeof req.type - 1] = '\0';
                 req.timestamp = time(NULL);
+                if (delay > 0)
+                    sleep(delay);
                 if (send_request(mq, &req) == -1)
                     perror("mq_send");
             }
@@ -71,7 +78,7 @@ int main(int argc, char *argv[]) {
 
     } else {
         fprintf(stderr,
-                "Uso: %s <queue> <id> <type> <prio> <x> <y>\n"
+                "Uso: %s <queue> <id> <type> <prio> <x> <y> <delay>\n"
                 "   oppure: %s <queue> -f <file>\n",
                 argv[0], argv[0]);
         return 1;
