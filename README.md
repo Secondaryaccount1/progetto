@@ -27,3 +27,9 @@ be provided using command line options when launching the server:
 ```sh
 ./bin/server -r my_rescuers.conf -e my_emergencies.conf -n my_env.conf
 ```
+
+The `-n` flag accepts an alternative `env.conf` file.  Edit its `queue=` entry
+to change the POSIX queue name used by the server instead of the default
+`/emergenze123`.
+
+Runtime logs are stored in `logs/server.log`.
