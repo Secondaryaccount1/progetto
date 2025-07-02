@@ -82,7 +82,7 @@ static void *twin_loop(void *arg)
         dt->y = dt->type->y;
         dt->status = IDLE;
         dt->assigned = 0;
-        dt->type->number++;
+        atomic_fetch_add(&dt->type->number, 1);
         log_event("RESCUER_STATUS id=%d type=%s status=IDLE", dt->id, dt->type->name);
         log_event("EMERGENCY_STATUS id=%d status=COMPLETED", eid);
         pthread_mutex_unlock(&dt->mtx);
@@ -139,8 +139,11 @@ void digital_twin_shutdown(rescuer_dt_t *list, int n)
 rescuer_dt_t *digital_twin_find_idle(rescuer_dt_t *list, int n,
                                      rescuer_type_t *type)
 {
-    for (int i=0;i<n;i++) {
-        if (list[i].type==type && list[i].status==IDLE)
+    for (int i = 0; i < n; i++) {
+        pthread_mutex_lock(&list[i].mtx);
+        int match = (list[i].type == type && list[i].status == IDLE);
+        pthread_mutex_unlock(&list[i].mtx);
+        if (match)
             return &list[i];
     }
     return NULL;
@@ -164,7 +167,7 @@ int digital_twin_assign(rescuer_dt_t *dt, int emergency_id,
     dt->emergency_type[sizeof(dt->emergency_type)-1] = '\0';
     dt->assigned = 1;
     dt->preempt = 0;
-    dt->type->number--; /* decrease available */
+    atomic_fetch_sub(&dt->type->number, 1); /* decrease available */
     pthread_cond_signal(&dt->cond);
     pthread_mutex_unlock(&dt->mtx);
     return 0;
@@ -174,10 +177,14 @@ rescuer_dt_t *digital_twin_find_preemptible(rescuer_dt_t *list, int n,
                                             rescuer_type_t *type,
                                             int min_priority)
 {
-    for (int i=0;i<n;i++) {
-        if (list[i].type==type &&
-            (list[i].status==EN_ROUTE_TO_SCENE || list[i].status==ON_SCENE) &&
-            list[i].emergency_priority < min_priority)
+    for (int i = 0; i < n; i++) {
+        pthread_mutex_lock(&list[i].mtx);
+        int match = (list[i].type == type &&
+                     (list[i].status == EN_ROUTE_TO_SCENE ||
+                      list[i].status == ON_SCENE) &&
+                     list[i].emergency_priority < min_priority);
+        pthread_mutex_unlock(&list[i].mtx);
+        if (match)
             return &list[i];
     }
     return NULL;
