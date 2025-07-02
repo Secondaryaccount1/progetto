@@ -78,18 +78,15 @@ int main(int argc, char *argv[]) {
     }
 
     /* 3) Logger */
-    if (mkdir("logs", 0755) == -1 && errno != EEXIST) {
-        perror("mkdir logs");
-        return 1;
-    }
-    if (log_init("logs/server.log") != 0) {
-        perror("log_init");
-        return 1;
-    }
+    int rc = mkdir("logs", 0755);
+    if (rc == -1 && errno != EEXIST)
+        SYS_CHECK(rc);
+    SYS_CHECK(log_init("logs/server.log"));
     log_event("Loaded %d rescuers, %d emergency types",
               n_rescuers, n_etypes);
 
-    if (digital_twin_factory(rescuer_list, n_rescuers, &dt_list, &dt_count) != 0) {
+    if (digital_twin_factory(rescuer_list, n_rescuers,
+                             &dt_list, &dt_count) != 0) {
         log_event("Errore creazione digital twins");
         return 1;
     }
@@ -113,17 +110,12 @@ int main(int argc, char *argv[]) {
         .queue    = &queue,
         .msg_size = sizeof(emergency_request_t)
     };
-    if (pthread_create(&listener_thread, NULL,
-                       mq_listener, &args) != 0) {
-        log_event("pthread_create listener fallita");
-        scheduler_stop();
-        bqueue_destroy(&queue);
-        return 1;
-    }
+    PTH_CHECK(pthread_create(&listener_thread, NULL,
+                             mq_listener, &args));
     log_event("Server avviato e in ascolto su %s", cfg.queue_name);
 
     /* 6) Attende CTRL-C */
-    pthread_join(listener_thread, NULL);
+    PTH_CHECK(pthread_join(listener_thread, NULL));
     scheduler_stop();
     digital_twin_shutdown(dt_list, dt_count);
     bqueue_destroy(&queue);

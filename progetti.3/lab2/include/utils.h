@@ -4,7 +4,21 @@
 
 #include <stdlib.h>
 #include <limits.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 #include "models.h"  /* per rescuer_type_t ed emergency_type_t */
+
+/* Controllo errori per chiamate di sistema */
+#define SYS_CHECK(call) \
+    do { if ((call) == -1) { perror(#call); exit(EXIT_FAILURE); } } while (0)
+
+/* Controllo errori per funzioni pthread */
+#define PTH_CHECK(call) \
+    do { int _err = (call); if (_err != 0) { \
+            fprintf(stderr, "%s: %s\n", #call, strerror(_err)); \
+            exit(EXIT_FAILURE); \
+        } } while (0)
 
 /* -------------------------------------- */
 /* Calcola la distanza di Manhattan       */

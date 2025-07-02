@@ -113,9 +113,9 @@ int digital_twin_factory(rescuer_type_t *types, int n_types,
             dt->y = types[i].y;
             dt->type = &types[i];
             dt->status = IDLE;
-            pthread_mutex_init(&dt->mtx, NULL);
-            pthread_cond_init(&dt->cond, NULL);
-            pthread_create(&dt->thread, NULL, twin_loop, dt);
+            PTH_CHECK(pthread_mutex_init(&dt->mtx, NULL));
+            PTH_CHECK(pthread_cond_init(&dt->cond, NULL));
+            PTH_CHECK(pthread_create(&dt->thread, NULL, twin_loop, dt));
             id++;
         }
     }
@@ -133,9 +133,9 @@ void digital_twin_shutdown(rescuer_dt_t *list, int n)
         pthread_mutex_unlock(&list[i].mtx);
     }
     for (int i=0;i<n;i++) {
-        pthread_join(list[i].thread, NULL);
-        pthread_mutex_destroy(&list[i].mtx);
-        pthread_cond_destroy(&list[i].cond);
+        PTH_CHECK(pthread_join(list[i].thread, NULL));
+        PTH_CHECK(pthread_mutex_destroy(&list[i].mtx));
+        PTH_CHECK(pthread_cond_destroy(&list[i].cond));
     }
     free(list);
 }

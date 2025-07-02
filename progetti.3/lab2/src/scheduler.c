@@ -288,9 +288,9 @@ static void *scheduler_loop(void *arg) {
 int scheduler_start(bqueue_t *q) {
     sched_stop = 0;
     q_global   = q;
-    int rc = pthread_create(&sched_thr, NULL, scheduler_loop, q);
-    if (rc != 0) return rc;
-    return pthread_create(&monitor_thr, NULL, monitor_loop, NULL);
+    PTH_CHECK(pthread_create(&sched_thr, NULL, scheduler_loop, q));
+    PTH_CHECK(pthread_create(&monitor_thr, NULL, monitor_loop, NULL));
+    return 0;
 }
 
 void scheduler_stop(void) {
@@ -298,7 +298,7 @@ void scheduler_stop(void) {
     pthread_mutex_lock(&q_global->mtx);
     pthread_cond_signal(&q_global->not_empty);
     pthread_mutex_unlock(&q_global->mtx);
-    pthread_join(sched_thr, NULL);
-    pthread_join(monitor_thr, NULL);
+    PTH_CHECK(pthread_join(sched_thr, NULL));
+    PTH_CHECK(pthread_join(monitor_thr, NULL));
 }
 
