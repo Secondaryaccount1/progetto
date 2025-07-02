@@ -24,6 +24,8 @@ emergency_type_t *etype_list   = NULL;
 int               n_etypes     = 0;
 rescuer_dt_t     *dt_list      = NULL;
 int               dt_count     = 0;
+int               env_width    = 0;
+int               env_height   = 0;
 
 extern void sigint_handler(int);
 
@@ -37,6 +39,8 @@ int main(void) {
         cfg.width = 0;
         cfg.height = 0;
     }
+    env_width  = cfg.width;
+    env_height = cfg.height;
     printf("[SERVER] Queue: %s  (grid %dx%d)\n",
            cfg.queue_name, cfg.width, cfg.height);
 

@@ -26,6 +26,8 @@ extern emergency_type_t *etype_list;
 extern int               n_etypes;
 extern rescuer_dt_t     *dt_list;
 extern int               dt_count;
+extern int               env_width;
+extern int               env_height;
 
 static pthread_t sched_thr;
 static volatile sig_atomic_t sched_stop = 0;
@@ -37,6 +39,17 @@ static void *scheduler_loop(void *arg) {
 
     while (!sched_stop) {
         emergency_request_t req = bqueue_pop(q);
+
+        long now = time(NULL);
+        if (req.x < 0 || req.x >= env_width ||
+            req.y < 0 || req.y >= env_height) {
+            log_event("Invalid coords for request %d dropped", req.id);
+            continue;
+        }
+        if (req.timestamp <= 0 || req.timestamp > now) {
+            log_event("Invalid timestamp for request %d dropped", req.id);
+            continue;
+        }
 
         // 1) Find emergency type metadata
         emergency_type_t *et = NULL;
@@ -55,7 +68,6 @@ static void *scheduler_loop(void *arg) {
         bool can_assign = true;
         double t_manage = (double)et->time_to_manage;
 
-        long now = time(NULL);
         int eff_priority = req.priority;
         if (req.priority == 0 && now - req.timestamp > AGING_THRESHOLD) {
             eff_priority = 1;
