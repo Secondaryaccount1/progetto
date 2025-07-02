@@ -33,12 +33,23 @@ static pthread_t sched_thr;
 static volatile sig_atomic_t sched_stop = 0;
 static bqueue_t *q_global = NULL;
 
+#define MAX_PAUSED 128
+static emergency_request_t paused_q[MAX_PAUSED];
+static int paused_count = 0;
+
 // Scheduler loop: consumes emergencies and assigns them
 static void *scheduler_loop(void *arg) {
     bqueue_t *q = (bqueue_t *)arg;
 
     while (!sched_stop) {
-        emergency_request_t req = bqueue_pop(q);
+        emergency_request_t req;
+        bool from_paused = false;
+        if (paused_count > 0) {
+            req = paused_q[--paused_count];
+            from_paused = true;
+        } else {
+            req = bqueue_pop(q);
+        }
 
         long now = time(NULL);
         if (req.x < 0 || req.x >= env_width ||
@@ -78,15 +89,22 @@ static void *scheduler_loop(void *arg) {
         double max_travel = 0.0;
 
         rescuer_dt_t *used[10];
+        int preempt_flags[10];
 
         for (int j = 0; j < et->n_required; j++) {
             int ridx = et->required_units[j];
             rescuer_type_t *r = &rescuer_list[ridx];
 
             rescuer_dt_t *dt = digital_twin_find_idle(dt_list, dt_count, r);
+            preempt_flags[j] = 0;
             if (!dt) {
-                can_assign = false;
-                break;
+                dt = digital_twin_find_preemptible(dt_list, dt_count, r, eff_priority);
+                if (dt) {
+                    preempt_flags[j] = 1;
+                } else {
+                    can_assign = false;
+                    break;
+                }
             }
             used[j] = dt;
 
@@ -100,21 +118,31 @@ static void *scheduler_loop(void *arg) {
 
         // 3) Assign or timeout
         if (can_assign) {
+            log_event("EMERGENCY_STATUS id=%d status=ASSIGNED", req.id);
             for (int j = 0; j < et->n_required; j++) {
                 rescuer_dt_t *dt = used[j];
                 rescuer_type_t *r = dt->type;
-
+                if (preempt_flags[j]) {
+                    emergency_request_t old_req;
+                    digital_twin_preempt(dt, &req, et->time_to_manage, &old_req);
+                    log_event("PREEMPT %s#%d emergency %d→%d", r->name, dt->id, old_req.id, req.id);
+                    log_event("EMERGENCY_STATUS id=%d status=PAUSED", old_req.id);
+                    if (paused_count < MAX_PAUSED) paused_q[paused_count++] = old_req;
+                } else {
+                    digital_twin_assign(dt, req.id, req.type, eff_priority, req.x, req.y, et->time_to_manage);
+                }
                 log_event("ASSIGN emergenza %d → %s#%d", req.id, r->name, dt->id);
-                log_event("EMERGENCY_STATUS id=%d status=ASSIGNED", req.id);
-
-                digital_twin_assign(dt, req.id, req.x, req.y, et->time_to_manage);
             }
 
         } else {
-            double needed = max_travel + t_manage;
-            log_event("TIMEOUT emergenza %d (need=%.1f > d=%d)",
-                      req.id, needed, deadline);
-            log_event("EMERGENCY_STATUS id=%d status=TIMEOUT", req.id);
+            if (from_paused) {
+                if (paused_count < MAX_PAUSED) paused_q[paused_count++] = req;
+            } else {
+                double needed = max_travel + t_manage;
+                log_event("TIMEOUT emergenza %d (need=%.1f > d=%d)",
+                          req.id, needed, deadline);
+                log_event("EMERGENCY_STATUS id=%d status=TIMEOUT", req.id);
+            }
         }
     }
     return NULL;
