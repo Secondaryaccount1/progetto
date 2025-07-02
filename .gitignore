@@ -1,4 +1,4 @@
-build/
 bin/
-*.o
+build/
+logs/*.log
 progetti.3/lab2/test_*
