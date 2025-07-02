@@ -33,3 +33,20 @@ to change the POSIX queue name used by the server instead of the default
 `/emergenze123`.
 
 Runtime logs are stored in `logs/server.log`.
+
+## Build and test
+
+The `Makefile` under `progetti.3/lab2` provides convenient targets:
+
+```sh
+make -C progetti.3/lab2 server   # build the server binary
+make -C progetti.3/lab2 client   # build the client binary
+make -C progetti.3/lab2 test-utils      # run unit tests for utils
+make -C progetti.3/lab2 test-parsers    # run parser tests
+make -C progetti.3/lab2 test-parse-env  # run env parser tests
+make -C progetti.3/lab2 test-deadlock   # run deadlock monitor tests
+make -C progetti.3/lab2 test-scheduler  # run scheduler integration test
+```
+
+The default `make build` target builds the server, while `make run` launches it
+with the default configuration files.
