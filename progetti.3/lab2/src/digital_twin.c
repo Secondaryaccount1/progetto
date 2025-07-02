@@ -125,7 +125,11 @@ int digital_twin_factory(rescuer_type_t *types, int n_types,
             dt->status = IDLE;
             pthread_mutex_init(&dt->mtx, NULL);
             pthread_cond_init(&dt->cond, NULL);
-            pthread_create(&dt->thread, NULL, twin_loop, dt);
+            if (pthread_create(&dt->thread, NULL, twin_loop, dt) != 0) {
+                log_event_ex("DT", "THREAD", "failed to start twin %d", id);
+                free(arr);
+                return -1;
+            }
             id++;
         }
     }

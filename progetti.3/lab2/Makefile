@@ -7,30 +7,18 @@ SRC_DIR := src
 OBJ_DIR := build
 BIN_DIR := bin
 
-# Main binary (lab2)
-BIN := $(BIN_DIR)/lab2
+# No monolithic binary is produced. Server and client are built separately.
 
-# Gather all .c under SRC_DIR
-SRCS := $(shell find $(SRC_DIR) -name '*.c')
-OBJS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
 
 # --------------------------------------------------
 # Target principale: build / run / clean
 # --------------------------------------------------
 
 .PHONY: build run clean
-build: $(BIN)
+build: server
 
-$(BIN): $(OBJS)
-	@mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) $^ -o $@
-
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -Iinclude -c $< -o $@
-
-run: build
-	./$(BIN)
+run: server
+	./$(BIN_SERVER)
 
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR) logs/*.log tests/_*.txt
