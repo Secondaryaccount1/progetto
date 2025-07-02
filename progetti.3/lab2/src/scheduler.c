@@ -30,12 +30,70 @@ extern int               env_width;
 extern int               env_height;
 
 static pthread_t sched_thr;
+static pthread_t monitor_thr;
 static volatile sig_atomic_t sched_stop = 0;
 static bqueue_t *q_global = NULL;
 
 #define MAX_PAUSED 128
 static emergency_request_t paused_q[MAX_PAUSED];
 static int paused_count = 0;
+static pthread_mutex_t paused_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+/* After this many seconds a paused emergency is bumped in priority */
+#define DEADLOCK_TIMEOUT 30
+
+void scheduler_check_deadlocks(void)
+{
+    long now = time(NULL);
+    pthread_mutex_lock(&paused_mtx);
+    for (int i = 0; i < paused_count; i++) {
+        if (now - paused_q[i].timestamp > DEADLOCK_TIMEOUT &&
+            paused_q[i].priority < 2) {
+            paused_q[i].priority++;
+            paused_q[i].timestamp = now;
+            log_event("DEADLOCK_ESCALATE emergency %d priority %d",
+                      paused_q[i].id, paused_q[i].priority);
+        }
+    }
+    pthread_mutex_unlock(&paused_mtx);
+}
+
+static void *monitor_loop(void *arg)
+{
+    (void)arg;
+    while (!sched_stop) {
+        scheduler_check_deadlocks();
+        struct timespec ts = { .tv_sec = 1, .tv_nsec = 0 };
+        nanosleep(&ts, NULL);
+    }
+    return NULL;
+}
+
+void scheduler_debug_add_paused(emergency_request_t req)
+{
+    pthread_mutex_lock(&paused_mtx);
+    if (paused_count < MAX_PAUSED)
+        paused_q[paused_count++] = req;
+    pthread_mutex_unlock(&paused_mtx);
+}
+
+int scheduler_debug_get_paused_count(void)
+{
+    pthread_mutex_lock(&paused_mtx);
+    int c = paused_count;
+    pthread_mutex_unlock(&paused_mtx);
+    return c;
+}
+
+emergency_request_t scheduler_debug_get_paused(int idx)
+{
+    emergency_request_t r = {0};
+    pthread_mutex_lock(&paused_mtx);
+    if (idx >= 0 && idx < paused_count)
+        r = paused_q[idx];
+    pthread_mutex_unlock(&paused_mtx);
+    return r;
+}
 
 // Scheduler loop: consumes emergencies and assigns them
 static void *scheduler_loop(void *arg) {
@@ -44,10 +102,13 @@ static void *scheduler_loop(void *arg) {
     while (!sched_stop) {
         emergency_request_t req;
         bool from_paused = false;
+        pthread_mutex_lock(&paused_mtx);
         if (paused_count > 0) {
             req = paused_q[--paused_count];
             from_paused = true;
-        } else {
+        }
+        pthread_mutex_unlock(&paused_mtx);
+        if (!from_paused) {
             req = bqueue_pop(q);
         }
 
@@ -127,7 +188,9 @@ static void *scheduler_loop(void *arg) {
                     digital_twin_preempt(dt, &req, et->time_to_manage, &old_req);
                     log_event("PREEMPT %s#%d emergency %d→%d", r->name, dt->id, old_req.id, req.id);
                     log_event("EMERGENCY_STATUS id=%d status=PAUSED", old_req.id);
+                    pthread_mutex_lock(&paused_mtx);
                     if (paused_count < MAX_PAUSED) paused_q[paused_count++] = old_req;
+                    pthread_mutex_unlock(&paused_mtx);
                 } else {
                     digital_twin_assign(dt, req.id, req.type, eff_priority, req.x, req.y, et->time_to_manage);
                 }
@@ -136,7 +199,9 @@ static void *scheduler_loop(void *arg) {
 
         } else {
             if (from_paused) {
+                pthread_mutex_lock(&paused_mtx);
                 if (paused_count < MAX_PAUSED) paused_q[paused_count++] = req;
+                pthread_mutex_unlock(&paused_mtx);
             } else {
                 double needed = max_travel + t_manage;
                 log_event("TIMEOUT emergenza %d (need=%.1f > d=%d)",
@@ -151,7 +216,9 @@ static void *scheduler_loop(void *arg) {
 int scheduler_start(bqueue_t *q) {
     sched_stop = 0;
     q_global   = q;
-    return pthread_create(&sched_thr, NULL, scheduler_loop, q);
+    int rc = pthread_create(&sched_thr, NULL, scheduler_loop, q);
+    if (rc != 0) return rc;
+    return pthread_create(&monitor_thr, NULL, monitor_loop, NULL);
 }
 
 void scheduler_stop(void) {
@@ -160,5 +227,6 @@ void scheduler_stop(void) {
     pthread_cond_signal(&q_global->not_empty);
     pthread_mutex_unlock(&q_global->mtx);
     pthread_join(sched_thr, NULL);
+    pthread_join(monitor_thr, NULL);
 }
 
