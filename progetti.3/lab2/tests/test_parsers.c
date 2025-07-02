@@ -39,6 +39,18 @@ int main(void) {
     assert(parse_emergency_types_file("tests/_et.txt", rl, nrl, &el, &nel) == 0);
     assert(nel == 0);
     free(el);
+
+    // Mixed valid and unknown rescuer names in the same line
+    f = fopen("tests/_et.txt","w");
+    fprintf(f,"[Mixed] [1] Amb:1,5; Foo:2,3;\n");
+    fclose(f);
+
+    el = NULL;
+    nel = 0;
+    assert(parse_emergency_types_file("tests/_et.txt", rl, nrl, &el, &nel) == 0);
+    assert(nel == 0);
+    free(el);
+
     free(rl);
 
     printf("[test_parsers] all tests passed\n");
