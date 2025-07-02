@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
         .timestamp = time(NULL)
     };
     strncpy(req.type, argv[3], sizeof(req.type)-1);
+    req.type[sizeof(req.type)-1] = '\0';
 
     mqd_t mq = mq_open(qname, O_WRONLY | O_CREAT, 0660, NULL);
     CHECK(mq);
