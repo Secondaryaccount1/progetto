@@ -14,6 +14,9 @@
 #include "models.h"
 #include "digital_twin.h"
 
+/* After this many seconds a priority 0 emergency becomes priority 1 */
+#define AGING_THRESHOLD 60
+
 // Globals defined in server.c
 extern rescuer_type_t   *rescuer_list;
 extern int               n_rescuers;
@@ -49,7 +52,15 @@ static void *scheduler_loop(void *arg) {
         // 2) Check availability and deadlines
         bool can_assign = true;
         double t_manage = (double)et->time_to_manage;
-        int deadline   = priority_deadline_secs(req.priority);
+
+        long now = time(NULL);
+        int eff_priority = req.priority;
+        if (req.priority == 0 && now - req.timestamp > AGING_THRESHOLD) {
+            eff_priority = 1;
+            log_event("AGING emergency %d priority 0→1", req.id);
+        }
+
+        int deadline   = priority_deadline_secs(eff_priority);
         double max_travel = 0.0;
 
         rescuer_dt_t *used[10];
