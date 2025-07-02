@@ -45,8 +45,11 @@ static void *twin_loop(void *arg)
         int eid = dt->emergency_id;
         dt->status = EN_ROUTE_TO_SCENE;
         scheduler_set_emergency_status(eid, EM_STATUS_IN_PROGRESS);
-        log_event("RESCUER_STATUS id=%d type=%s status=EN_ROUTE_TO_SCENE", dt->id, dt->type->name);
-        log_event("EMERGENCY_STATUS id=%d status=IN_PROGRESS", eid);
+        log_event_ex("DT", "RESCUER_STATUS",
+                    "id=%d type=%s status=EN_ROUTE_TO_SCENE",
+                    dt->id, dt->type->name);
+        log_event_ex("DT", "EMERGENCY_STATUS",
+                    "id=%d status=IN_PROGRESS", eid);
         pthread_mutex_unlock(&dt->mtx);
 
         double ttrav = travel_time_secs(dt->type, dt->x, dt->y, dx, dy);
@@ -59,7 +62,9 @@ static void *twin_loop(void *arg)
         pthread_mutex_lock(&dt->mtx);
         dt->x = dx; dt->y = dy;
         dt->status = ON_SCENE;
-        log_event("RESCUER_STATUS id=%d type=%s status=ON_SCENE", dt->id, dt->type->name);
+        log_event_ex("DT", "RESCUER_STATUS",
+                    "id=%d type=%s status=ON_SCENE",
+                    dt->id, dt->type->name);
         pthread_mutex_unlock(&dt->mtx);
 
         if (ts_sleep_intr(dt, mtime)) {
@@ -70,7 +75,9 @@ static void *twin_loop(void *arg)
 
         pthread_mutex_lock(&dt->mtx);
         dt->status = RETURNING_TO_BASE;
-        log_event("RESCUER_STATUS id=%d type=%s status=RETURNING_TO_BASE", dt->id, dt->type->name);
+        log_event_ex("DT", "RESCUER_STATUS",
+                    "id=%d type=%s status=RETURNING_TO_BASE",
+                    dt->id, dt->type->name);
         pthread_mutex_unlock(&dt->mtx);
 
         double tret = travel_time_secs(dt->type, dx, dy, dt->type->x, dt->type->y);
@@ -86,9 +93,12 @@ static void *twin_loop(void *arg)
         dt->status = IDLE;
         dt->assigned = 0;
         atomic_fetch_add(&dt->type->number, 1);
-        log_event("RESCUER_STATUS id=%d type=%s status=IDLE", dt->id, dt->type->name);
+        log_event_ex("DT", "RESCUER_STATUS",
+                    "id=%d type=%s status=IDLE",
+                    dt->id, dt->type->name);
         scheduler_set_emergency_status(eid, EM_STATUS_COMPLETED);
-        log_event("EMERGENCY_STATUS id=%d status=COMPLETED", eid);
+        log_event_ex("DT", "EMERGENCY_STATUS",
+                    "id=%d status=COMPLETED", eid);
         pthread_mutex_unlock(&dt->mtx);
     }
     pthread_mutex_unlock(&dt->mtx);

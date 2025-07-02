@@ -56,8 +56,9 @@ void scheduler_check_deadlocks(void)
             paused_q[i].priority < 2) {
             paused_q[i].priority++;
             paused_q[i].timestamp = now;
-            log_event("DEADLOCK_ESCALATE emergency %d priority %d",
-                      paused_q[i].id, paused_q[i].priority);
+            log_event_ex("SCH", "DEADLOCK_ESCALATE",
+                        "emergency %d priority %d",
+                        paused_q[i].id, paused_q[i].priority);
         }
     }
     pthread_mutex_unlock(&paused_mtx);
@@ -181,17 +182,20 @@ static void *scheduler_loop(void *arg) {
         long now = time(NULL);
         if (req.x < 0 || req.x >= env_width ||
             req.y < 0 || req.y >= env_height) {
-            log_event("Invalid coords for request %d dropped", req.id);
+            log_event_ex("SCH", "INVALID_REQUEST",
+                        "Invalid coords for request %d dropped", req.id);
             continue;
         }
         if (req.timestamp <= 0 || req.timestamp > now) {
-            log_event("Invalid timestamp for request %d dropped", req.id);
+            log_event_ex("SCH", "INVALID_REQUEST",
+                        "Invalid timestamp for request %d dropped", req.id);
             continue;
         }
 
         scheduler_add_emergency(&req);
         scheduler_set_emergency_status(req.id, EM_STATUS_WAITING);
-        log_event("EMERGENCY_STATUS id=%d status=WAITING", req.id);
+        log_event_ex("SCH", "EMERGENCY_STATUS",
+                    "id=%d status=WAITING", req.id);
 
         // 1) Find emergency type metadata
         emergency_type_t *et = NULL;
@@ -202,7 +206,8 @@ static void *scheduler_loop(void *arg) {
             }
         }
         if (!et) {
-            log_event("Unknown emergency type '%s'", req.type);
+            log_event_ex("SCH", "UNKNOWN_EMERGENCY_TYPE",
+                        "'%s'", req.type);
             continue;
         }
 
@@ -213,7 +218,8 @@ static void *scheduler_loop(void *arg) {
         int eff_priority = req.priority;
         if (req.priority == 0 && now - req.timestamp > AGING_THRESHOLD) {
             eff_priority = 1;
-            log_event("AGING emergency %d priority 0→1", req.id);
+            log_event_ex("SCH", "AGING",
+                        "emergency %d priority 0→1", req.id);
         }
 
         int deadline   = priority_deadline_secs(eff_priority);
@@ -250,22 +256,27 @@ static void *scheduler_loop(void *arg) {
         // 3) Assign or timeout
         if (can_assign) {
             scheduler_set_emergency_status(req.id, EM_STATUS_ASSIGNED);
-            log_event("EMERGENCY_STATUS id=%d status=ASSIGNED", req.id);
+            log_event_ex("SCH", "EMERGENCY_STATUS",
+                        "id=%d status=ASSIGNED", req.id);
             for (int j = 0; j < et->n_required; j++) {
                 rescuer_dt_t *dt = used[j];
                 rescuer_type_t *r = dt->type;
                 if (preempt_flags[j]) {
                     emergency_request_t old_req;
                     digital_twin_preempt(dt, &req, et->time_to_manage, &old_req);
-                    log_event("PREEMPT %s#%d emergency %d→%d", r->name, dt->id, old_req.id, req.id);
-                    log_event("EMERGENCY_STATUS id=%d status=PAUSED", old_req.id);
+                    log_event_ex("SCH", "PREEMPT",
+                                "%s#%d emergency %d→%d", r->name, dt->id,
+                                old_req.id, req.id);
+                    log_event_ex("SCH", "EMERGENCY_STATUS",
+                                "id=%d status=PAUSED", old_req.id);
                     pthread_mutex_lock(&paused_mtx);
                     if (paused_count < MAX_PAUSED) paused_q[paused_count++] = old_req;
                     pthread_mutex_unlock(&paused_mtx);
                 } else {
                     digital_twin_assign(dt, req.id, req.type, eff_priority, req.x, req.y, et->time_to_manage);
                 }
-                log_event("ASSIGN emergenza %d → %s#%d", req.id, r->name, dt->id);
+                log_event_ex("SCH", "ASSIGN",
+                            "emergenza %d → %s#%d", req.id, r->name, dt->id);
             }
 
         } else {
@@ -275,10 +286,12 @@ static void *scheduler_loop(void *arg) {
                 pthread_mutex_unlock(&paused_mtx);
             } else {
                 double needed = max_travel + t_manage;
-                log_event("TIMEOUT emergenza %d (need=%.1f > d=%d)",
-                          req.id, needed, deadline);
+                log_event_ex("SCH", "TIMEOUT",
+                            "emergenza %d (need=%.1f > d=%d)",
+                            req.id, needed, deadline);
                 scheduler_set_emergency_status(req.id, EM_STATUS_TIMEOUT);
-                log_event("EMERGENCY_STATUS id=%d status=TIMEOUT", req.id);
+                log_event_ex("SCH", "EMERGENCY_STATUS",
+                            "id=%d status=TIMEOUT", req.id);
             }
         }
     }

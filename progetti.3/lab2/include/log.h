@@ -11,6 +11,11 @@ int  log_init(const char *filepath);
  *  formato + argomenti variabili. Aggiunge data-ora e newline.  */
 void log_event(const char *fmt, ...);
 
+/*  Versione estesa: consente di specificare un identificatore e una
+ *  categoria dell'evento da registrare. L'output sarà del tipo:
+ *  [timestamp] [id] [event] messaggio                                 */
+void log_event_ex(const char *id, const char *event, const char *fmt, ...);
+
 /*  Chiudere il file prima di terminare il processo.             */
 void log_close(void);
 

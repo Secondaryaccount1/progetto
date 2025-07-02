@@ -86,22 +86,23 @@ int main(int argc, char *argv[]) {
         perror("log_init");
         return 1;
     }
-    log_event("Loaded %d rescuers, %d emergency types",
-              n_rescuers, n_etypes);
+    log_event_ex("SRV", "INFO",
+                "Loaded %d rescuers, %d emergency types",
+                n_rescuers, n_etypes);
 
     if (digital_twin_factory(rescuer_list, n_rescuers, &dt_list, &dt_count) != 0) {
-        log_event("Errore creazione digital twins");
+        log_event_ex("SRV", "ERROR", "Errore creazione digital twins");
         return 1;
     }
 
     /* 4) Queue interna + scheduler */
     bqueue_t queue;
     if (bqueue_init(&queue, 100) != 0) {
-        log_event("Errore init queue");
+        log_event_ex("SRV", "ERROR", "Errore init queue");
         return 1;
     }
     if (scheduler_start(&queue) != 0) {
-        log_event("Errore avvio scheduler");
+        log_event_ex("SRV", "ERROR", "Errore avvio scheduler");
         return 1;
     }
 
@@ -115,12 +116,12 @@ int main(int argc, char *argv[]) {
     };
     if (pthread_create(&listener_thread, NULL,
                        mq_listener, &args) != 0) {
-        log_event("pthread_create listener fallita");
+        log_event_ex("SRV", "ERROR", "pthread_create listener fallita");
         scheduler_stop();
         bqueue_destroy(&queue);
         return 1;
     }
-    log_event("Server avviato e in ascolto su %s", cfg.queue_name);
+    log_event_ex("SRV", "INFO", "Server avviato e in ascolto su %s", cfg.queue_name);
 
     /* 6) Attende CTRL-C */
     pthread_join(listener_thread, NULL);

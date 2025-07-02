@@ -45,15 +45,15 @@ void *mq_listener(void *arg)
 
     mqd_t mq = mq_open(qn, O_CREAT | O_RDONLY, 0660, &attr);
     if (mq == (mqd_t)-1) {
-        log_event("mq_open(%s) failed: %s", qn, strerror(errno));
+        log_event_ex("MQ", "ERROR", "mq_open(%s) failed: %s", qn, strerror(errno));
         return NULL;
     }
-    log_event("Listener attivo sulla coda %s", qn);
+    log_event_ex("MQ", "INFO", "Listener attivo sulla coda %s", qn);
 
     /* Buffer grande abbastanza per qualunque messaggio */
     char *buf = malloc(attr.mq_msgsize);
     if (!buf) {
-        log_event("malloc(%ld) failed", (long)attr.mq_msgsize);
+        log_event_ex("MQ", "ERROR", "malloc(%ld) failed", (long)attr.mq_msgsize);
         mq_close(mq); mq_unlink(qn);
         return NULL;
     }
@@ -66,8 +66,9 @@ void *mq_listener(void *arg)
             emergency_request_t req;
             memcpy(&req, buf, sizeof req);
 
-            log_event("Queued emergenza %d (%s) prio=%d @(%d,%d)",
-                      req.id, req.type, req.priority, req.x, req.y);
+            log_event_ex("MQ", "QUEUE",
+                        "emergenza %d (%s) prio=%d @(%d,%d)",
+                        req.id, req.type, req.priority, req.x, req.y);
 
             bqueue_push(q, req);         /* producer → coda interna */
         }
@@ -75,10 +76,10 @@ void *mq_listener(void *arg)
             /* Logga una sola volta ciascun codice d’errore */
             static int warned_emsgsize = 0;
             if (errno == EMSGSIZE && !warned_emsgsize) {
-                log_event("mq_receive error EMSGSIZE (msg troppo grande)");
+                log_event_ex("MQ", "ERROR", "mq_receive error EMSGSIZE (msg troppo grande)");
                 warned_emsgsize = 1;
             } else if (errno != EMSGSIZE) {
-                log_event("mq_receive error: %s", strerror(errno));
+                log_event_ex("MQ", "ERROR", "mq_receive error: %s", strerror(errno));
             }
         }
     }
@@ -86,7 +87,7 @@ void *mq_listener(void *arg)
     free(buf);
     mq_close(mq);
     mq_unlink(qn);
-    log_event("Listener terminato, coda %s chiusa", qn);
+    log_event_ex("MQ", "INFO", "Listener terminato, coda %s chiusa", qn);
     return NULL;
 }
 
