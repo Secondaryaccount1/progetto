@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "models.h"
 #include "parse_env.h"
@@ -29,12 +30,31 @@ int               env_height   = 0;
 
 extern void sigint_handler(int);
 
-int main(void) {
+int main(int argc, char *argv[]) {
+    const char *resc_path = "conf/rescuers.conf";
+    const char *etype_path = "conf/emergency_types.conf";
+    const char *env_path = "conf/env.conf";
+
+    int opt;
+    while ((opt = getopt(argc, argv, "r:e:n:")) != -1) {
+        switch (opt) {
+            case 'r': resc_path = optarg; break;
+            case 'e': etype_path = optarg; break;
+            case 'n': env_path = optarg; break;
+            default:
+                fprintf(stderr,
+                        "Usage: %s [-r resc.conf] [-e etypes.conf] [-n env.conf]\n",
+                        argv[0]);
+                return 1;
+        }
+    }
+
     /* 1) Config */
     env_config_t cfg;
-    if (parse_env_file("conf/env.conf", &cfg) != 0) {
+    if (parse_env_file(env_path, &cfg) != 0) {
         fprintf(stderr,
-                "Warning: conf/env.conf non trovato, uso valori di default\n");
+                "Warning: %s non trovato, uso valori di default\n",
+                env_path);
         strcpy(cfg.queue_name, "/emergenze123");
         cfg.width = 0;
         cfg.height = 0;
@@ -45,15 +65,15 @@ int main(void) {
            cfg.queue_name, cfg.width, cfg.height);
 
     /* 2) Parser rescuers & emergency types */
-    if (parse_rescuers_file("conf/rescuers.conf",
+    if (parse_rescuers_file(resc_path,
                             &rescuer_list, &n_rescuers) != 0) {
-        fprintf(stderr, "Errore parsing conf/rescuers.conf\n");
+        fprintf(stderr, "Errore parsing %s\n", resc_path);
         return 1;
     }
-    if (parse_emergency_types_file("conf/emergency_types.conf",
+    if (parse_emergency_types_file(etype_path,
                                    rescuer_list, n_rescuers,
                                    &etype_list, &n_etypes) != 0) {
-        fprintf(stderr, "Errore parsing conf/emergency_types.conf\n");
+        fprintf(stderr, "Errore parsing %s\n", etype_path);
         return 1;
     }
 

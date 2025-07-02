@@ -47,7 +47,7 @@ $(BIN_CLIENT): src/client.c include/models.h
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -Iinclude $< -o $@
 
-# Server: parsing env.conf, listener, logging, queue, scheduler
+# Server: listener and scheduler (use -r/-e/-n to override conf paths)
 $(BIN_SERVER): \
 	src/server.c \
 	src/mq_manager.c \
