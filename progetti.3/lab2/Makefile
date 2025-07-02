@@ -122,3 +122,14 @@ $(BIN_TEST_DEADLOCK): tests/test_deadlock.c src/scheduler.c src/log.c include/sc
 test-deadlock: $(BIN_TEST_DEADLOCK)
 	./$(BIN_TEST_DEADLOCK)
 
+# Scheduler integration test
+BIN_TEST_SCHEDULER := $(BIN_DIR)/test_scheduler
+$(BIN_TEST_SCHEDULER): tests/test_scheduler.c \
+    src/scheduler.c src/queue.c src/log.c \
+    include/scheduler.h include/queue.h include/log.h include/models.h
+	@mkdir -p $(BIN_DIR)
+	$(CC) $(CFLAGS) -Iinclude $^ -o $@
+
+.PHONY: test-scheduler
+test-scheduler: $(BIN_TEST_SCHEDULER)
+	./$(BIN_TEST_SCHEDULER)
