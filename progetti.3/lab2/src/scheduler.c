@@ -39,6 +39,11 @@ static emergency_request_t paused_q[MAX_PAUSED];
 static int paused_count = 0;
 static pthread_mutex_t paused_mtx = PTHREAD_MUTEX_INITIALIZER;
 
+#define MAX_EMERGENCIES 256
+static emergency_t emergency_table[MAX_EMERGENCIES];
+static int emergency_count = 0;
+static pthread_mutex_t emergency_mtx = PTHREAD_MUTEX_INITIALIZER;
+
 /* After this many seconds a paused emergency is bumped in priority */
 #define DEADLOCK_TIMEOUT 30
 
@@ -95,6 +100,67 @@ emergency_request_t scheduler_debug_get_paused(int idx)
     return r;
 }
 
+static emergency_t *find_emergency(int id)
+{
+    for (int i = 0; i < emergency_count; i++)
+        if (emergency_table[i].id == id)
+            return &emergency_table[i];
+    return NULL;
+}
+
+void scheduler_add_emergency(const emergency_request_t *req)
+{
+    pthread_mutex_lock(&emergency_mtx);
+    emergency_t *e = find_emergency(req->id);
+    if (!e && emergency_count < MAX_EMERGENCIES) {
+        e = &emergency_table[emergency_count++];
+        e->id = req->id;
+        strncpy(e->type, req->type, sizeof(e->type) - 1);
+        e->type[sizeof(e->type) - 1] = '\0';
+        e->creation_time = req->timestamp;
+    }
+    if (e) {
+        e->x = req->x;
+        e->y = req->y;
+        e->priority = req->priority;
+        e->status = EM_STATUS_WAITING;
+    }
+    pthread_mutex_unlock(&emergency_mtx);
+}
+
+int scheduler_set_emergency_status(int id, emergency_status_t st)
+{
+    int changed = 0;
+    pthread_mutex_lock(&emergency_mtx);
+    emergency_t *e = find_emergency(id);
+    if (e) {
+        if (e->status != st) {
+            e->status = st;
+            changed = 1;
+        }
+    }
+    pthread_mutex_unlock(&emergency_mtx);
+    return changed;
+}
+
+int scheduler_debug_get_emergency_count(void)
+{
+    pthread_mutex_lock(&emergency_mtx);
+    int c = emergency_count;
+    pthread_mutex_unlock(&emergency_mtx);
+    return c;
+}
+
+emergency_t scheduler_debug_get_emergency(int idx)
+{
+    emergency_t e = {0};
+    pthread_mutex_lock(&emergency_mtx);
+    if (idx >= 0 && idx < emergency_count)
+        e = emergency_table[idx];
+    pthread_mutex_unlock(&emergency_mtx);
+    return e;
+}
+
 // Scheduler loop: consumes emergencies and assigns them
 static void *scheduler_loop(void *arg) {
     bqueue_t *q = (bqueue_t *)arg;
@@ -122,6 +188,10 @@ static void *scheduler_loop(void *arg) {
             log_event("Invalid timestamp for request %d dropped", req.id);
             continue;
         }
+
+        scheduler_add_emergency(&req);
+        scheduler_set_emergency_status(req.id, EM_STATUS_WAITING);
+        log_event("EMERGENCY_STATUS id=%d status=WAITING", req.id);
 
         // 1) Find emergency type metadata
         emergency_type_t *et = NULL;
@@ -179,6 +249,7 @@ static void *scheduler_loop(void *arg) {
 
         // 3) Assign or timeout
         if (can_assign) {
+            scheduler_set_emergency_status(req.id, EM_STATUS_ASSIGNED);
             log_event("EMERGENCY_STATUS id=%d status=ASSIGNED", req.id);
             for (int j = 0; j < et->n_required; j++) {
                 rescuer_dt_t *dt = used[j];
@@ -206,6 +277,7 @@ static void *scheduler_loop(void *arg) {
                 double needed = max_travel + t_manage;
                 log_event("TIMEOUT emergenza %d (need=%.1f > d=%d)",
                           req.id, needed, deadline);
+                scheduler_set_emergency_status(req.id, EM_STATUS_TIMEOUT);
                 log_event("EMERGENCY_STATUS id=%d status=TIMEOUT", req.id);
             }
         }
