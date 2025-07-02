@@ -21,10 +21,9 @@ void log_close(void)
     }
 }
 
-void log_event(const char *fmt, ...)
+static void log_event_v(const char *id, const char *event,
+                        const char *fmt, va_list ap)
 {
-    if (!fp) return;                      /* logger non inizializzato */
-
     time_t now = time(NULL);
     struct tm tm;
     localtime_r(&now, &tm);
@@ -34,15 +33,33 @@ void log_event(const char *fmt, ...)
 
     pthread_mutex_lock(&mtx);
 
-    fprintf(fp, "[%s] ", ts);
+    fprintf(fp, "[%s] [%s] [%s] ", ts,
+            id ? id : "", event ? event : "");
 
-    va_list ap;
-    va_start(ap, fmt);
     vfprintf(fp, fmt, ap);
-    va_end(ap);
 
     fputc('\n', fp);
     fflush(fp);          /* flush immediato: semplice e sicuro */
 
     pthread_mutex_unlock(&mtx);
+}
+
+void log_event_ex(const char *id, const char *event, const char *fmt, ...)
+{
+    if (!fp) return;                      /* logger non inizializzato */
+
+    va_list ap;
+    va_start(ap, fmt);
+    log_event_v(id, event, fmt, ap);
+    va_end(ap);
+}
+
+void log_event(const char *fmt, ...)
+{
+    if (!fp) return;                      /* logger non inizializzato */
+
+    va_list ap;
+    va_start(ap, fmt);
+    log_event_v("", "", fmt, ap);
+    va_end(ap);
 }
