@@ -2,11 +2,13 @@
 #define MODELS_H
 
 /* --------------- soccorritore ---------------- */
+#include <stdatomic.h>
+
 typedef struct {
-    char name[32];
-    int  number;
-    int  speed;
-    int  x, y;
+    char       name[32];
+    atomic_int number;
+    int        speed;
+    int        x, y;
 } rescuer_type_t;
 
 /* --------------- tipo di emergenza ------------ */
