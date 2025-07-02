@@ -28,7 +28,9 @@ int parse_emergency_types_file(const char *path,
     char line[256];
     char name[32];
     int priority;
+    int line_no = 0;
     while (fgets(line, sizeof line, fp)) {
+        line_no++;
         char rest[200];
         if (sscanf(line, "[%31[^]]] [%d] %199[^\n]", name, &priority, rest) != 3)
             continue;
@@ -56,8 +58,8 @@ int parse_emergency_types_file(const char *path,
                 break;
             }
             int ridx = rescuer_index_by_name(rname, rlist, n_rlist);
-            if (ridx == -1) {
-                log_event("Unknown rescuer type '%s'", rname);
+            if (ridx < 0) {
+                log_event("FILE_PARSING: unknown rescuer type '%s' on line %d", rname, line_no);
                 valid_line = 0;
                 break;
             }
