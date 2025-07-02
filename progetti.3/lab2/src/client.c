@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <mqueue.h>
+#include <time.h>
 #include "models.h"
 
 #define CHECK(x)  do { if ((x) == -1) { perror(#x); exit(1);} } while (0)
@@ -17,7 +18,8 @@ int main(int argc, char *argv[]) {
         .id       = atoi(argv[2]),
         .priority = atoi(argv[4]),
         .x        = atoi(argv[5]),
-        .y        = atoi(argv[6])
+        .y        = atoi(argv[6]),
+        .timestamp = time(NULL)
     };
     strncpy(req.type, argv[3], sizeof(req.type)-1);
 
