@@ -1,4 +1,4 @@
-// src/mq_manager.c
+// file src/mq_manager.c
 #include "mq_manager.h"
 #include "models.h"
 #include "log.h"
