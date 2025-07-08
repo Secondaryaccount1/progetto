@@ -29,7 +29,7 @@ int main(void) {
     assert(strcmp(el[0].name,"Fire")==0 && el[0].priority==2 && el[0].n_required==1);
     free(el);
 
-    // Unknown rescuer type should be logged and the line skipped
+    // Un tipo di soccorritore sconosciuto deve essere loggato e la riga ignorata
     f = fopen("tests/_et.txt","w");
     fprintf(f,"[Crash] [1] Foo:1,3;\n");
     fclose(f);
@@ -40,7 +40,7 @@ int main(void) {
     assert(nel == 0);
     free(el);
 
-    // Mixed valid and unknown rescuer names in the same line
+    // Nella stessa riga nomi validi e sconosciuti
     f = fopen("tests/_et.txt","w");
     fprintf(f,"[Mixed] [1] Amb:1,5; Foo:2,3;\n");
     fclose(f);

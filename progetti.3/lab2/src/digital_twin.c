@@ -130,7 +130,7 @@ int digital_twin_factory(rescuer_type_t *types, int n_types,
             pthread_cond_init(&dt->cond, NULL);
             if (pthread_create(&dt->thread, NULL, twin_loop, dt) != 0) {
                 log_event_ex("DT", "THREAD", "failed to start twin %d", id);
-                /* cleanup previously created twins */
+                /* pulizia dei digital twin creati in precedenza */
                 stop_twins = 1;
                 for (int k = 0; k < id; k++) {
                     pthread_mutex_lock(&arr[k].mtx);
@@ -201,7 +201,7 @@ int digital_twin_assign(rescuer_dt_t *dt, int emergency_id,
     dt->emergency_type[sizeof(dt->emergency_type)-1] = '\0';
     dt->assigned = 1;
     dt->preempt = 0;
-    atomic_fetch_sub(&dt->type->number, 1); /* decrease available */
+    atomic_fetch_sub(&dt->type->number, 1); /* diminuisce il numero disponibile */
     pthread_cond_signal(&dt->cond);
     pthread_mutex_unlock(&dt->mtx);
     return 0;

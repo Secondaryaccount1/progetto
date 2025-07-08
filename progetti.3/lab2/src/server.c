@@ -1,4 +1,4 @@
-// src/server.c
+// file src/server.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

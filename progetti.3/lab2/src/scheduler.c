@@ -15,11 +15,12 @@
 #include "models.h"
 #include "digital_twin.h"
 
-/* After this many seconds a priority 0 emergency becomes priority 1 */
+/* Dopo questo numero di secondi una emergenza di priorità 0 diventa 1 */
 #define AGING_THRESHOLD 60
 
-// Globals defined in server.c. The scheduler assumes the logs directory
-// already exists and is created by the server before threads start.
+// Variabili globali definite in server.c. Lo scheduler presume che la
+// directory dei log esista già ed è creata dal server prima del lancio
+// dei thread.
 extern rescuer_type_t   *rescuer_list;
 extern int               n_rescuers;
 extern emergency_type_t *etype_list;
@@ -44,7 +45,7 @@ static emergency_t emergency_table[MAX_EMERGENCIES];
 static int emergency_count = 0;
 static pthread_mutex_t emergency_mtx = PTHREAD_MUTEX_INITIALIZER;
 
-/* After this many seconds a paused emergency is bumped in priority */
+/* Dopo questo intervallo una emergenza in pausa viene incrementata di priorità */
 #define DEADLOCK_TIMEOUT 30
 
 void scheduler_check_deadlocks(void)
@@ -162,7 +163,7 @@ emergency_t scheduler_debug_get_emergency(int idx)
     return e;
 }
 
-// Scheduler loop: consumes emergencies and assigns them
+// Ciclo dello scheduler: consuma le emergenze e le assegna
 static void *scheduler_loop(void *arg) {
     bqueue_t *q = (bqueue_t *)arg;
 
@@ -197,7 +198,7 @@ static void *scheduler_loop(void *arg) {
         log_event_ex("SCH", "EMERGENCY_STATUS",
                     "id=%d status=WAITING", req.id);
 
-        // 1) Find emergency type metadata
+        // 1) Ricerca dei metadati del tipo di emergenza
         emergency_type_t *et = NULL;
         for (int i = 0; i < n_etypes; i++) {
             if (strcmp(etype_list[i].name, req.type) == 0) {
@@ -211,7 +212,7 @@ static void *scheduler_loop(void *arg) {
             continue;
         }
 
-        // 2) Check availability and deadlines
+        // 2) Verifica disponibilità e scadenze
         bool can_assign = true;
         double t_manage = (double)et->time_to_manage;
 
@@ -253,7 +254,7 @@ static void *scheduler_loop(void *arg) {
             }
         }
 
-        // 3) Assign or timeout
+        // 3) Assegna oppure va in timeout
         if (can_assign) {
             scheduler_set_emergency_status(req.id, EM_STATUS_ASSIGNED);
             log_event_ex("SCH", "EMERGENCY_STATUS",
