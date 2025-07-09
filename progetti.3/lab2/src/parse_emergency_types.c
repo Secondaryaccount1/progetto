@@ -60,7 +60,7 @@ int parse_emergency_types_file(const char *path,
             int ridx = rescuer_index_by_name(rname, rlist, n_rlist);
             if (ridx < 0) {
                 log_event_ex("PARSE", "FILE_PARSING",
-                            "unknown rescuer type '%s' on line %d",
+                            "tipo di soccorritore sconosciuto '%s' alla riga %d",
                             rname, line_no);
                 valid_line = 0;
                 break;

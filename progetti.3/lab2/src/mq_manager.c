@@ -15,7 +15,7 @@
 static volatile sig_atomic_t stop = 0;
 
 /* ────────────────────────────────────────────── */
-/* Handler Ctrl-C                                */
+/* Gestore di Ctrl-C                             */
 /* ────────────────────────────────────────────── */
 void sigint_handler(int signo)
 {
@@ -24,7 +24,7 @@ void sigint_handler(int signo)
 }
 
 /* ────────────────────────────────────────────── */
-/* Thread listener: POSIX MQ → coda interna      */
+/* Thread di ascolto: POSIX MQ → coda interna    */
 /* ────────────────────────────────────────────── */
 void *mq_listener(void *arg)
 {
@@ -45,15 +45,15 @@ void *mq_listener(void *arg)
 
     mqd_t mq = mq_open(qn, O_CREAT | O_RDONLY, 0660, &attr);
     if (mq == (mqd_t)-1) {
-        log_event_ex("MQ", "ERROR", "mq_open(%s) failed: %s", qn, strerror(errno));
+        log_event_ex("MQ", "ERROR", "mq_open(%s) fallita: %s", qn, strerror(errno));
         return NULL;
     }
-    log_event_ex("MQ", "INFO", "Listener attivo sulla coda %s", qn);
+    log_event_ex("MQ", "INFO", "Thread di ascolto attivo sulla coda %s", qn);
 
     /* Buffer grande abbastanza per qualunque messaggio */
     char *buf = malloc(attr.mq_msgsize);
     if (!buf) {
-        log_event_ex("MQ", "ERROR", "malloc(%ld) failed", (long)attr.mq_msgsize);
+        log_event_ex("MQ", "ERROR", "malloc(%ld) fallita", (long)attr.mq_msgsize);
         mq_close(mq); mq_unlink(qn);
         return NULL;
     }
@@ -87,7 +87,7 @@ void *mq_listener(void *arg)
     free(buf);
     mq_close(mq);
     mq_unlink(qn);
-    log_event_ex("MQ", "INFO", "Listener terminato, coda %s chiusa", qn);
+    log_event_ex("MQ", "INFO", "Thread di ascolto terminato, coda %s chiusa", qn);
     return NULL;
 }
 

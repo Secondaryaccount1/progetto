@@ -184,12 +184,14 @@ static void *scheduler_loop(void *arg) {
         if (req.x < 0 || req.x >= env_width ||
             req.y < 0 || req.y >= env_height) {
             log_event_ex("SCH", "INVALID_REQUEST",
-                        "Invalid coords for request %d dropped", req.id);
+                        "Coordinate non valide per la richiesta %d, scartata",
+                        req.id);
             continue;
         }
         if (req.timestamp <= 0 || req.timestamp > now) {
             log_event_ex("SCH", "INVALID_REQUEST",
-                        "Invalid timestamp for request %d dropped", req.id);
+                        "Timestamp non valido per la richiesta %d, scartata",
+                        req.id);
             continue;
         }
 
