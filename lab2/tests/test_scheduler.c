@@ -7,7 +7,7 @@
 #include "queue.h"
 #include <unistd.h>
 
-/* Globals required by scheduler.c */
+/* Variabili globali richieste da scheduler.c */
 rescuer_type_t   *rescuer_list = NULL;
 int               n_rescuers   = 0;
 emergency_type_t *etype_list   = NULL;
@@ -17,7 +17,7 @@ int               dt_count     = 0;
 int               env_width    = 0;
 int               env_height   = 0;
 
-/* Stub digital twin data */
+/* Stub dati del digital twin */
 static rescuer_dt_t dt_stub;
 static int assign_count = 0;
 static emergency_request_t last_assigned;
@@ -29,7 +29,7 @@ rescuer_dt_t *digital_twin_find_idle(rescuer_dt_t *l,int n,rescuer_type_t *t){
 }
 
 rescuer_dt_t *digital_twin_find_preemptible(rescuer_dt_t *l,int n,rescuer_type_t *t,int p){
-    return NULL; /* not used */
+    return NULL; /* non utilizzato */
 }
 
 int digital_twin_assign(rescuer_dt_t *dt,int id,const char *type,int pr,int x,int y,int tman){
@@ -49,7 +49,7 @@ int digital_twin_preempt(rescuer_dt_t *dt,const emergency_request_t *r,int m,eme
 }
 
 int main(void){
-    /* Setup single rescuer and emergency type */
+    /* Inizializza un singolo soccorritore e tipo di emergenza */
     static rescuer_type_t rescuer;
     strcpy(rescuer.name, "Amb");
     rescuer.number = 1;
@@ -81,7 +81,7 @@ int main(void){
 
     long now = time(NULL);
 
-    /* 1) valid assignment */
+    /* 1) assegnazione valida */
     emergency_request_t r1 = {1, "Fire", 1,1, 2, now};
     bqueue_push(&q, r1);
     sleep(1);
@@ -91,22 +91,22 @@ int main(void){
     emergency_t e1 = scheduler_debug_get_emergency(0);
     assert(e1.status == EM_STATUS_ASSIGNED);
 
-    /* 2) invalid coordinates */
+    /* 2) coordinate non valide */
     emergency_request_t r2 = {2, "Fire", -1,0, 2, now};
     bqueue_push(&q, r2);
     sleep(1);
-    assert(assign_count == 1); /* unchanged */
+    assert(assign_count == 1); /* invariato */
     assert(scheduler_debug_get_emergency_count() == 1);
 
-    /* 3) invalid timestamp */
+    /* 3) timestamp non valido */
     emergency_request_t r3 = {3, "Fire", 2,2, 2, now + 3600};
     bqueue_push(&q, r3);
     sleep(1);
     assert(assign_count == 1);
     assert(scheduler_debug_get_emergency_count() == 1);
 
-    /* 4) resource shortage -> timeout */
-    dt_stub.assigned = 1; /* no idle rescuers */
+    /* 4) risorse insufficienti -> timeout */
+    dt_stub.assigned = 1; /* nessun soccorritore libero */
     emergency_request_t r4 = {4, "Fire", 1,1, 2, now};
     bqueue_push(&q, r4);
     sleep(1);
@@ -114,19 +114,19 @@ int main(void){
     emergency_t e2 = scheduler_debug_get_emergency(1);
     assert(e2.status == EM_STATUS_TIMEOUT);
 
-    /* 5) aging priority 0 -> 1 */
-    dt_stub.assigned = 0; /* rescuer free */
+    /* 5) aging priorità 0 -> 1 */
+    dt_stub.assigned = 0; /* soccorritore libero */
     emergency_request_t r5 = {5, "Fire", 2,2, 0, now - 70};
     bqueue_push(&q, r5);
     sleep(1);
     assert(assign_count == 2);
     assert(last_assigned.id == 5);
-    assert(last_assigned.priority == 1); /* aged */
+    assert(last_assigned.priority == 1); /* incrementata */
     assert(scheduler_debug_get_emergency_count() == 3);
     emergency_t e3 = scheduler_debug_get_emergency(2);
     assert(e3.status == EM_STATUS_ASSIGNED);
 
-    /* push dummy event so scheduler thread can exit cleanly */
+    /* inserisce un evento fittizio per far terminare il thread scheduler */
     emergency_request_t done = {99, "Fire", 0,0, 2, now};
     bqueue_push(&q, done);
 
