@@ -28,16 +28,16 @@ I log di esecuzione sono salvati in `logs/server.log`.
 
 ## Build e test
 
-Il `Makefile` in `progetti.3/lab2` fornisce alcuni target utili:
+Il `Makefile` in `lab2` fornisce alcuni target utili:
 
 ```sh
-make -C progetti.3/lab2 server          # compila il server
-make -C progetti.3/lab2 client          # compila il client
-make -C progetti.3/lab2 test-utils      # esegue i test delle utility
-make -C progetti.3/lab2 test-parsers    # esegue i test dei parser
-make -C progetti.3/lab2 test-parse-env  # esegue i test del parser env
-make -C progetti.3/lab2 test-deadlock   # esegue i test del monitor deadlock
-make -C progetti.3/lab2 test-scheduler  # esegue il test di integrazione dello scheduler
+make -C lab2 server          # compila il server
+make -C lab2 client          # compila il client
+make -C lab2 test-utils      # esegue i test delle utility
+make -C lab2 test-parsers    # esegue i test dei parser
+make -C lab2 test-parse-env  # esegue i test del parser env
+make -C lab2 test-deadlock   # esegue i test del monitor deadlock
+make -C lab2 test-scheduler  # esegue il test di integrazione dello scheduler
 ```
 
 Il target predefinito `make build` compila il server, mentre `make run` lo avvia con i file di configurazione standard.

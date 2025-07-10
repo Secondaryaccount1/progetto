@@ -4,7 +4,7 @@ INTRODUZIONE
 Il presente documento offre una panoramica completa del sistema di gestione delle emergenze realizzato per il Laboratorio 2. Lo scopo è fornire una guida unica che copra l'architettura generale, le principali scelte progettuali e le indicazioni operative per compilare ed eseguire i vari componenti. La lunghezza complessiva è stata pensata per rientrare in circa cinque pagine di testo.
 
 1. ARCHITETTURA DEL SISTEMA
-Il progetto è suddiviso in più moduli che cooperano fra loro per simulare la ricezione e la gestione di richieste di soccorso. I file sorgenti sono collocati nella cartella progetti.3/lab2. Di seguito una breve descrizione dei moduli principali:
+Il progetto è suddiviso in più moduli che cooperano fra loro per simulare la ricezione e la gestione di richieste di soccorso. I file sorgenti sono collocati nella cartella lab2. Di seguito una breve descrizione dei moduli principali:
 
 1.1 PARSER DEI FILE DI CONFIGURAZIONE
 - parse_env.c – Legge il file env.conf dove sono presenti le dimensioni della griglia di simulazione e il nome della coda POSIX utilizzata per la comunicazione fra client e server.
@@ -55,24 +55,24 @@ Tutte le decisioni critiche (assegnazioni, timeout, aging, deadlock) sono regist
 La cartella tests contiene diversi file C con test unitari e di integrazione. Sono previsti target del Makefile per eseguirli facilmente (vedi sezione successiva). L'obiettivo è garantire un minimo di affidabilità del codice e verificare che le funzionalità principali (parser, scheduler, gestione deadlock) si comportino come atteso.
 
 3. ISTRUZIONI PER COMPILARE ED ESEGUIRE
-Tutte le operazioni di build sono gestite tramite il Makefile presente nella cartella progetti.3/lab2. Di seguito i comandi più importanti.
+Tutte le operazioni di build sono gestite tramite il Makefile presente nella cartella lab2. Di seguito i comandi più importanti.
 
 3.1 COMPILAZIONE DEL SERVER E DEL CLIENT
 Per compilare il server basta eseguire:
-make -C progetti.3/lab2 server
-Il binario risultante sarà collocato in progetti.3/lab2/bin/server.
+make -C lab2 server
+Il binario risultante sarà collocato in lab2/bin/server.
 
 In modo analogo si può compilare il client:
-make -C progetti.3/lab2 client
+make -C lab2 client
 
 L'obiettivo predefinito del Makefile (invocato con make o make build) produce il server, per comodità.
 
 3.2 ESECUZIONE DEL SERVER
 Una volta compilato, il server può essere avviato con
-make -C progetti.3/lab2 run
+make -C lab2 run
 oppure eseguendo direttamente il binario:
-./progetti.3/lab2/bin/server
-Per impostazione predefinita il programma cerca i file di configurazione nella cartella progetti.3/lab2/conf. È possibile sovrascrivere i percorsi tramite le opzioni:
+./lab2/bin/server
+Per impostazione predefinita il programma cerca i file di configurazione nella cartella lab2/conf. È possibile sovrascrivere i percorsi tramite le opzioni:
 ./bin/server -r miei_rescuers.conf -e mie_emergencies.conf -n mio_env.conf
 Il parametro -n specifica anche il nome della coda POSIX.
 
@@ -80,16 +80,16 @@ I log sono salvati in logs/server.log. Se la directory non esiste viene creata a
 
 3.3 ESECUZIONE DEL CLIENT
 Il client richiede in input i parametri di un'emergenza. Un esempio minimalista può essere:
-./progetti.3/lab2/bin/client < id > <tipo> <x> <y> <priorità>
+./lab2/bin/client < id > <tipo> <x> <y> <priorità>
 Esso scriverà sulla coda POSIX la struttura emergency_request_t corrispondente, in modo che il server possa processarla.
 
 3.4 LANCIO DEI TEST
 Per verificare il corretto funzionamento dei vari moduli sono disponibili i seguenti comandi:
-make -C progetti.3/lab2 test-utils
-make -C progetti.3/lab2 test-parsers
-make -C progetti.3/lab2 test-parse-env
-make -C progetti.3/lab2 test-deadlock
-make -C progetti.3/lab2 test-scheduler
+make -C lab2 test-utils
+make -C lab2 test-parsers
+make -C lab2 test-parse-env
+make -C lab2 test-deadlock
+make -C lab2 test-scheduler
 Ogni target compila ed esegue l'eseguibile di test corrispondente.
 
 4. CONCLUSIONI
