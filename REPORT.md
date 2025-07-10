@@ -7,13 +7,12 @@ Questo documento descrive l'architettura del sistema di gestione delle emergenze
 2. Scelte progettuali
 3. Istruzioni di build e uso
 4. Struttura dei file
-5. Conclusioni e possibili estensioni
+5. Conclusioni
 
 ---
-
 ## 1. Panoramica dell'architettura
 
-Il sistema è basato su un'architettura modulare (Figura 1) che comprende i seguenti elementi principali:
+Il sistema è basato su un'architettura modulare che comprende i seguenti elementi principali:
 
 - **Listener della coda**: un thread che riceve i messaggi di emergenza da una coda POSIX.
 - **Scheduler**: il componente che decide quale soccorritore assegnare a ogni emergenza.
@@ -21,29 +20,6 @@ Il sistema è basato su un'architettura modulare (Figura 1) che comprende i segu
 - **Modulo di logging**: registra su file gli eventi chiave del sistema.
 - **Parser di configurazione**: caricano le informazioni da file `conf/*.conf`.
 - **Code di gestione interna**: per lo scambio di richieste tra i thread.
-
-```text
-          +-------------------------------+
-          |          POSIX MQ             |
-          +---------------+---------------+
-                          |
-                 +--------v-------+
-                 |   Listener     |
-                 +--------+-------+
-                          | queue interna
-                 +--------v-------+
-                 |   Scheduler    |
-                 +--------+-------+
-                          |
-       +------------------+------------------+
-       |                  |                  |
-+------v------+   +------v------+   +-------v-----+
-|  Digital    |   |  Digital    |   |   Digital   |
-|  Twin #0    |   |  Twin #1    |   |   Twin #N   |
-+-------------+   +-------------+   +-------------+
-```
-
-**Figura 1** – Schema semplificato dei thread principali e dei flussi di dati.
 
 Ogni emergenza viene inviata tramite un messaggio (`emergency_request_t`) a una coda POSIX definita in `env.conf`. Il server lancia un thread che ascolta questa coda e inserisce i messaggi in una coda circolare interna (`bqueue_t`). Lo scheduler preleva le richieste da questa coda, verifica la disponibilità dei soccorritori e li assegna alla gestione dell'emergenza.
 
@@ -61,7 +37,6 @@ I soccorritori sono rappresentati da thread "digital twin" che simulano l'avvici
 I test unitari si trovano in `tests/` e coprono la maggior parte dei moduli, compresa l'interazione dello scheduler con le priorità e il monitor di deadlock.
 
 ---
-
 ## 2. Scelte progettuali
 
 Di seguito le principali decisioni prese per l'implementazione del progetto.
@@ -96,7 +71,6 @@ I tipi di emergenza definiscono la priorità base e i soccorritori necessari. Il
 Ogni azione significativa produce una riga nel file log. Questo facilita il debug e la verifica delle funzionalità. Il log riporta anche eventuali errori di parsing o situazioni di timeout/preempted.
 
 ---
-
 ## 3. Istruzioni di build e uso
 
 Per compilare e testare il sistema è fornito un `Makefile` all'interno della cartella `progetti.3/lab2`. I target principali sono i seguenti:
@@ -145,7 +119,6 @@ Il progetto include un client di esempio (`src/client.c`) che invia richieste su
 Il client legge i tipi di emergenza e ne genera alcuni in sequenza per testare il funzionamento del server.
 
 ---
-
 ## 4. Struttura dei file
 
 Per facilitare l'orientamento, ecco una panoramica delle directory principali del progetto:
@@ -159,55 +132,9 @@ Per facilitare l'orientamento, ecco una panoramica delle directory principali de
 
 La directory `bin/` viene generata dal Makefile e ospita i binari compilati. Analogamente, `build/` contiene i file oggetto temporanei e `logs/` i file di log.
 
-La figura seguente mostra la gerarchia del progetto semplificata:
-
-```text
-progetti.3/lab2/
-├── Makefile
-├── conf/
-│   ├── emergency_types.conf
-│   ├── env.conf
-│   └── rescuers.conf
-├── include/
-│   ├── digital_twin.h
-│   ├── log.h
-│   ├── models.h
-│   ├── mq_manager.h
-│   ├── parse_emergency_types.h
-│   ├── parse_env.h
-│   ├── parse_rescuers.h
-│   ├── queue.h
-│   ├── scheduler.h
-│   └── utils.h
-├── src/
-│   ├── client.c
-│   ├── digital_twin.c
-│   ├── log.c
-│   ├── mq_manager.c
-│   ├── parse_emergency_types.c
-│   ├── parse_env.c
-│   ├── parse_rescuers.c
-│   ├── queue.c
-│   ├── scheduler.c
-│   └── server.c
-└── tests/
-    ├── test_deadlock.c
-    ├── test_parse_env.c
-    ├── test_parsers.c
-    ├── test_scheduler.c
-    └── test_utils.c
-```
-
 ---
-
-## 5. Conclusioni e possibili estensioni
-
-Il progetto fornisce una base solida per simulare un sistema di gestione delle emergenze con thread e code POSIX. L'approccio modulare permette di aggiungere nuove funzionalità senza modifiche invasive. Alcune idee di estensione potrebbero essere:
-
-- Integrazione con una vera rete di sensori o dispositivi fisici per ricevere segnalazioni reali.
-- Interfaccia web o dashboard per monitorare in tempo reale lo stato delle emergenze e dei soccorritori.
-- Persistenza su database degli interventi completati, per analisi successive.
-- Aggiunta di meccanismi di fault tolerance, come il salvataggio periodico della coda e il riavvio automatico degli interventi in caso di crash.
+## 5. Conclusioni
+Il progetto fornisce una base solida per simulare un sistema di gestione delle emergenze con thread e code POSIX. L'approccio modulare permette di aggiungere nuove funzionalità senza modifiche invasive.
 
 Il presente documento, insieme al `README.md`, copre le informazioni essenziali richieste per la consegna: descrizione dell'architettura, motivazioni delle scelte di implementazione e procedure di compilazione ed esecuzione.
 
