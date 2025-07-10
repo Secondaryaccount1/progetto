@@ -1,5 +1,5 @@
 bin/
 build/
 logs/*.log
-progetti.3/lab2/test_*
-progetti.3/lab2/tests/_*.txt
+lab2/test_*
+lab2/tests/_*.txt
