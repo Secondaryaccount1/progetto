@@ -93,4 +93,4 @@ make -C lab2 test-scheduler
 Ogni target compila ed esegue l'eseguibile di test corrispondente.
 
 4. CONCLUSIONI
-Il progetto fornisce una base funzionante per la gestione di emergenze simulando l'assegnazione di soccorritori tramite uno scheduler prioritario e un sistema di digital twin. La modularità del codice rende relativamente semplice aggiungere nuove funzionalità, purché vengano mantenute le interfacce pubbliche esistenti. I test unitari costituiscono una rete di sicurezza per evolvere il progetto senza compromettere il comportamento attuale.
+Il sistema sviluppato ha centrato l’obiettivo iniziale di simulare in modo realistico e controllato la gestione di richieste di emergenza, grazie a un’architettura modulare e a un robusto scheduler basato su priorità. L’impiego dei digital twin ha permesso di modellare efficacemente lo stato dei soccorritori, introducendo meccanismi di preemption e aging che evitano situazioni di deadlock e starvation.
