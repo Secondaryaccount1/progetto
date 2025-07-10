@@ -1,17 +1,17 @@
-# Toolchain
+# Strumenti di compilazione
 CC      := gcc
 CFLAGS  := -std=c11 -Wall -Wextra -pthread -O2
 
-# Directory layout
+# Struttura delle directory
 SRC_DIR := src
 OBJ_DIR := build
 BIN_DIR := bin
 
-# No monolithic binary is produced. Server and client are built separately.
+# Non viene prodotto un binario monolitico. Server e client sono compilati separatamente.
 
 
 # --------------------------------------------------
-# Target principale: build / run / clean
+# Obiettivi principali: build / run / clean
 # --------------------------------------------------
 
 .PHONY: build run clean
@@ -24,18 +24,18 @@ clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR) logs/*.log tests/_*.txt
 
 # --------------------------------------------------
-# Sub-system: POSIX MQ client & server
+# Sottosistema: client e server POSIX MQ
 # --------------------------------------------------
 
 BIN_CLIENT := $(BIN_DIR)/client
 BIN_SERVER := $(BIN_DIR)/server
 
-# Client: sends emergency_request_t
+# Client: invia emergency_request_t
 $(BIN_CLIENT): src/client.c include/models.h
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -Iinclude $< -o $@
 
-# Server: listener and scheduler (use -r/-e/-n to override conf paths)
+# Server: listener e scheduler (usa -r/-e/-n per sovrascrivere i percorsi di configurazione)
 $(BIN_SERVER): \
 	src/server.c \
 	src/mq_manager.c \
@@ -63,10 +63,10 @@ client: $(BIN_CLIENT)
 server: $(BIN_SERVER)
 
 # --------------------------------------------------
-# Unit tests
+# Test unitari
 # --------------------------------------------------
 
-# Test utils module
+# Test del modulo utils
 BIN_TEST_UTILS := $(BIN_DIR)/test_utils
 $(BIN_TEST_UTILS): tests/test_utils.c include/utils.h
 	@mkdir -p $(BIN_DIR)
@@ -76,21 +76,21 @@ $(BIN_TEST_UTILS): tests/test_utils.c include/utils.h
 test-utils: $(BIN_TEST_UTILS)
 	./$(BIN_TEST_UTILS)
 
-# Test parsers modules
+# Test dei moduli parser
 BIN_TEST_PARSERS := $(BIN_DIR)/test_parsers
 $(BIN_TEST_PARSERS): tests/test_parsers.c \
         src/parse_rescuers.c include/parse_rescuers.h \
         src/parse_emergency_types.c include/parse_emergency_types.h \
         src/log.c include/log.h
 	@mkdir -p $(BIN_DIR)
-		$(CC) $(CFLAGS) -Iinclude $^ -o $@
-		chmod +x $@
+	$(CC) $(CFLAGS) -Iinclude $^ -o $@
+	chmod +x $@
 
 .PHONY: test-parsers
 test-parsers: $(BIN_TEST_PARSERS)
 	./$(BIN_TEST_PARSERS)
 
-# Test parse_env module
+# Test del modulo parse_env
 BIN_TEST_PARSE_ENV := $(BIN_DIR)/test_parse_env
 $(BIN_TEST_PARSE_ENV): tests/test_parse_env.c src/parse_env.c include/parse_env.h
 	@mkdir -p $(BIN_DIR)
@@ -100,7 +100,7 @@ $(BIN_TEST_PARSE_ENV): tests/test_parse_env.c src/parse_env.c include/parse_env.
 test-parse-env: $(BIN_TEST_PARSE_ENV)
 	./$(BIN_TEST_PARSE_ENV)
 
-# Deadlock monitor test
+# Test del monitor dei deadlock
 BIN_TEST_DEADLOCK := $(BIN_DIR)/test_deadlock
 $(BIN_TEST_DEADLOCK): tests/test_deadlock.c src/scheduler.c src/log.c include/scheduler.h include/log.h include/models.h
 	@mkdir -p $(BIN_DIR)
@@ -110,7 +110,7 @@ $(BIN_TEST_DEADLOCK): tests/test_deadlock.c src/scheduler.c src/log.c include/sc
 test-deadlock: $(BIN_TEST_DEADLOCK)
 	./$(BIN_TEST_DEADLOCK)
 
-# Scheduler integration test
+# Test di integrazione dello scheduler
 BIN_TEST_SCHEDULER := $(BIN_DIR)/test_scheduler
 $(BIN_TEST_SCHEDULER): tests/test_scheduler.c \
     src/scheduler.c src/queue.c src/log.c \
