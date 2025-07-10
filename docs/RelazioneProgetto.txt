@@ -1,0 +1,96 @@
+RELAZIONE DI PROGETTO
+
+INTRODUZIONE
+Il presente documento offre una panoramica completa del sistema di gestione delle emergenze realizzato per il Laboratorio 2. Lo scopo è fornire una guida unica che copra l'architettura generale, le principali scelte progettuali e le indicazioni operative per compilare ed eseguire i vari componenti. La lunghezza complessiva è stata pensata per rientrare in circa cinque pagine di testo.
+
+1. ARCHITETTURA DEL SISTEMA
+Il progetto è suddiviso in più moduli che cooperano fra loro per simulare la ricezione e la gestione di richieste di soccorso. I file sorgenti sono collocati nella cartella progetti.3/lab2. Di seguito una breve descrizione dei moduli principali:
+
+1.1 PARSER DEI FILE DI CONFIGURAZIONE
+- parse_env.c – Legge il file env.conf dove sono presenti le dimensioni della griglia di simulazione e il nome della coda POSIX utilizzata per la comunicazione fra client e server.
+- parse_rescuers.c – Carica l'elenco dei soccorritori disponibili con informazioni quali nome, numero di unità presenti e velocità di spostamento.
+- parse_emergency_types.c – Analizza le varie tipologie di emergenza configurabili, inclusi i soccorritori richiesti per ciascuna di esse e i tempi di risoluzione previsti.
+
+I parser popolano strutture dati condivise che sono poi utilizzate dal server e dallo scheduler.
+
+1.2 MODULO DI DIGITAL TWIN
+Il file digital_twin.c fornisce una rappresentazione virtuale dei soccorritori presenti nel sistema. Ogni digital twin mantiene lo stato corrente di un soccorritore (posizione, priorità del compito in corso, tempo stimato al termine). Questo meccanismo permette allo scheduler di valutare rapidamente la fattibilità di un nuovo intervento ed eventuali preemption.
+
+1.3 GESTORE DELLA CODA E LOGGER
+mq_manager.c implementa il listener sulla coda POSIX da cui arrivano le richieste di emergenza. Il modulo log.c salva su file (logs/server.log) tutti gli eventi salienti: arrivo di una richiesta, assegnazioni, preemption, timeout e così via.
+
+1.4 SCHEDULER E MONITOR DEADLOCK
+Lo scheduler (scheduler.c) è il cuore del sistema. Consuma le emergenze inserite in una coda locale (queue.c) e decide se assegnarle a dei soccorritori disponibili o metterle in pausa. Un thread separato monitora periodicamente le emergenze sospese incrementandone la priorità qualora restino ferme troppo a lungo, in modo da evitare deadlock e starvation.
+
+1.5 PROGRAMMI CLIENT E SERVER
+- server.c – Avvia tutti i componenti descritti, attende i messaggi sulla coda e gestisce il ciclo di vita di ogni emergenza.
+- client.c – Invia sulla coda POSIX una struttura emergency_request_t con le informazioni essenziali (tipo, posizione, priorità ecc.). Può essere utilizzato per simulare richieste provenienti da utenti o sensori.
+
+1.6 STRUTTURE DATI PRINCIPALI
+Il file models.h raccoglie tutte le strutture utilizzate:
+- rescuer_type_t per i metadati dei soccorritori.
+- emergency_type_t per i tipi di emergenza.
+- emergency_t per tenere traccia delle emergenze in corso o completate.
+- emergency_request_t è il formato dei messaggi scambiati sul canale POSIX MQ.
+
+2. SCELTE PROGETTUALI
+Il sistema è stato realizzato in linguaggio C adottando lo standard C11 e facendo uso delle primitive POSIX (thread, mutex, condition variable e message queue). Le principali decisioni di progetto sono riassunte nei punti seguenti.
+
+2.1 SEMPLICITÀ E MODULARITÀ
+Si è scelto di separare le funzionalità in file diversi per favorire la manutenibilità. Parser, scheduler, coda e digital twin sono isolati in moduli con interfacce definite negli header corrispondenti. Ciò rende possibile estendere o sostituire ogni componente con minime modifiche.
+
+2.2 CODA INTERNA A BLOCCHI
+La coda utilizzata dallo scheduler (queue.c) è implementata come una bounded queue con mutex e condition variable. In questo modo il server può ricevere richieste anche quando lo scheduler è occupato, limitando però la memoria massima utilizzata.
+
+2.3 DIGITAL TWIN PER LA GESTIONE DELLE RISORSE
+Ogni soccorritore ha una sua controparte software che ne memorizza posizione e stato. Lo scheduler consulta questi oggetti per valutare rapidamente se una nuova emergenza è compatibile con le tempistiche richieste (tempo di arrivo e di gestione). Questo approccio rende immediato implementare la preemption: è sufficiente modificare lo stato del twin e spostare l'emergenza preempted nella lista "paused".
+
+2.4 PREEMPTION E INCREMENTO DI PRIORITÀ
+Quando non ci sono risorse disponibili, lo scheduler valuta la possibilità di preemptare un soccorritore impegnato su un intervento a priorità più bassa. Le emergenze preempate vengono parcheggiate in una coda separata e vengono regolarmente ricontrollate. Se trascorre troppo tempo, viene aumentata la priorità così da evitare che restino bloccate in eterno.
+
+2.5 LOGGING DETTAGLIATO
+Tutte le decisioni critiche (assegnazioni, timeout, aging, deadlock) sono registrate su file. In questo modo è possibile ricostruire a posteriori l'evoluzione del sistema e individuare eventuali malfunzionamenti.
+
+2.6 TEST AUTOMATIZZATI
+La cartella tests contiene diversi file C con test unitari e di integrazione. Sono previsti target del Makefile per eseguirli facilmente (vedi sezione successiva). L'obiettivo è garantire un minimo di affidabilità del codice e verificare che le funzionalità principali (parser, scheduler, gestione deadlock) si comportino come atteso.
+
+3. ISTRUZIONI PER COMPILARE ED ESEGUIRE
+Tutte le operazioni di build sono gestite tramite il Makefile presente nella cartella progetti.3/lab2. Di seguito i comandi più importanti.
+
+3.1 COMPILAZIONE DEL SERVER E DEL CLIENT
+Per compilare il server basta eseguire:
+make -C progetti.3/lab2 server
+Il binario risultante sarà collocato in progetti.3/lab2/bin/server.
+
+In modo analogo si può compilare il client:
+make -C progetti.3/lab2 client
+
+L'obiettivo predefinito del Makefile (invocato con make o make build) produce il server, per comodità.
+
+3.2 ESECUZIONE DEL SERVER
+Una volta compilato, il server può essere avviato con
+make -C progetti.3/lab2 run
+oppure eseguendo direttamente il binario:
+./progetti.3/lab2/bin/server
+Per impostazione predefinita il programma cerca i file di configurazione nella cartella progetti.3/lab2/conf. È possibile sovrascrivere i percorsi tramite le opzioni:
+./bin/server -r miei_rescuers.conf -e mie_emergencies.conf -n mio_env.conf
+Il parametro -n specifica anche il nome della coda POSIX.
+
+I log sono salvati in logs/server.log. Se la directory non esiste viene creata alla prima esecuzione.
+
+3.3 ESECUZIONE DEL CLIENT
+Il client richiede in input i parametri di un'emergenza. Un esempio minimalista può essere:
+./progetti.3/lab2/bin/client < id > <tipo> <x> <y> <priorità>
+Esso scriverà sulla coda POSIX la struttura emergency_request_t corrispondente, in modo che il server possa processarla.
+
+3.4 LANCIO DEI TEST
+Per verificare il corretto funzionamento dei vari moduli sono disponibili i seguenti comandi:
+make -C progetti.3/lab2 test-utils
+make -C progetti.3/lab2 test-parsers
+make -C progetti.3/lab2 test-parse-env
+make -C progetti.3/lab2 test-deadlock
+make -C progetti.3/lab2 test-scheduler
+Ogni target compila ed esegue l'eseguibile di test corrispondente.
+
+4. CONCLUSIONI
+Il progetto fornisce una base funzionante per la gestione di emergenze simulando l'assegnazione di soccorritori tramite uno scheduler prioritario e un sistema di digital twin. La modularità del codice rende relativamente semplice aggiungere nuove funzionalità, purché vengano mantenute le interfacce pubbliche esistenti. I test unitari costituiscono una rete di sicurezza per evolvere il progetto senza compromettere il comportamento attuale.
