@@ -5,7 +5,7 @@
 #include "digital_twin.h"
 #include "queue.h"
 
-/* Stubs required by scheduler.c but unused in this test */
+/* Stub richiesti da scheduler.c ma non usati in questo test */
 rescuer_type_t   *rescuer_list = NULL;
 int               n_rescuers   = 0;
 emergency_type_t *etype_list   = NULL;
@@ -25,7 +25,7 @@ int main(void) {
     emergency_request_t r;
     r.id = 1;
     r.priority = 1;
-    r.timestamp = time(NULL) - 100; /* older than timeout */
+    r.timestamp = time(NULL) - 100; /* più vecchia del timeout */
 
     scheduler_debug_add_paused(r);
 

@@ -41,7 +41,7 @@ typedef struct {
 
 /* --------------- config dell’ambiente --------- */
 typedef struct {
-    char queue_name[64];    /* POSIX queue name */
+    char queue_name[64];    /* nome della coda POSIX */
     int  width;             /* larghezza griglia */
     int  height;            /* altezza griglia */
 } env_config_t;
