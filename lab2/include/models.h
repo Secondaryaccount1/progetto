@@ -52,7 +52,7 @@ typedef struct {
     char type[32];
     int  x, y;
     int  priority;
-    long timestamp;      /* epoch time when request was generated */
+    long timestamp;      
 } emergency_request_t;
 
 #endif /* MODELS_H */
